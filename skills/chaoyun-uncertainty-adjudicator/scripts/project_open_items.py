@@ -1,15 +1,18 @@
 #!/usr/bin/env python3
-"""Validate uncertainty adjudication and project material open items."""
+"""Validate versioned uncertainty adjudication and atomically project open items."""
 
 from __future__ import annotations
 
 import argparse
 import json
+import os
+import tempfile
 from pathlib import Path
 
 
 STATUSES = {"resolved_confirmed", "resolved_noncontent", "resolved_structural", "resolved_duplicate", "open_material"}
 IMPACTS = {"none", "low", "medium", "high"}
+IMAGE_SUFFIXES = (".jpg", ".jpeg", ".png", ".tif", ".tiff", ".webp")
 
 
 def read_jsonl(path: Path) -> list[dict]:
@@ -26,20 +29,60 @@ def read_jsonl(path: Path) -> list[dict]:
     return rows
 
 
-def validate(candidates: list[dict], decisions: list[dict]) -> list[str]:
+def atomic_write_jsonl(path: Path, rows: list[dict]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    handle = tempfile.NamedTemporaryFile("w", encoding="utf-8", newline="", delete=False, dir=path.parent, prefix=path.name + ".", suffix=".tmp")
+    temporary = Path(handle.name)
+    try:
+        with handle:
+            for row in rows:
+                handle.write(json.dumps(row, ensure_ascii=False) + "\n")
+            handle.flush()
+            os.fsync(handle.fileno())
+        read_jsonl(temporary)
+        os.replace(temporary, path)
+    finally:
+        if temporary.exists():
+            temporary.unlink()
+
+
+def active_decisions(decisions: list[dict]) -> list[dict]:
+    return [row for row in decisions if row.get("active", True) is True]
+
+
+def validate(root: Path, candidates: list[dict], decisions: list[dict]) -> list[str]:
     errors: list[str] = []
     candidate_ids = [row.get("candidate_id") for row in candidates]
     if any(not value for value in candidate_ids):
         errors.append("every candidate requires candidate_id")
     if len(set(candidate_ids)) != len(candidate_ids):
         errors.append("duplicate candidate_id")
+    candidate_set = set(candidate_ids)
+    source_blocks: dict[str, dict] = {}
+    source_path = root / "20-source" / "blocks.jsonl"
+    if source_path.is_file():
+        source_blocks = {row.get("block_id"): row for row in read_jsonl(source_path) if row.get("block_id")}
+    for row in candidates:
+        source_image = row.get("source_image")
+        if source_image:
+            image_path = (root / str(source_image)).resolve()
+            try:
+                image_path.relative_to(root)
+            except ValueError:
+                errors.append(f"{row.get('candidate_id')} source_image escapes workspace")
+            else:
+                if not image_path.is_file():
+                    errors.append(f"{row.get('candidate_id')} missing source_image {source_image}")
+        block_id = row.get("block_id")
+        if block_id and source_blocks and block_id not in source_blocks:
+            errors.append(f"{row.get('candidate_id')} unknown block_id {block_id}")
+
     decision_ids = [row.get("adjudication_id") for row in decisions]
     if any(not value for value in decision_ids):
         errors.append("every adjudication requires adjudication_id")
     if len(set(decision_ids)) != len(decision_ids):
         errors.append("duplicate adjudication_id")
-    candidate_set = set(candidate_ids)
-    referenced: list[str] = []
+    decision_map = {row.get("adjudication_id"): row for row in decisions if row.get("adjudication_id")}
     for row in decisions:
         decision_id = row.get("adjudication_id")
         if row.get("status") not in STATUSES:
@@ -49,15 +92,46 @@ def validate(candidates: list[dict], decisions: list[dict]) -> list[str]:
         ids = row.get("candidate_ids")
         if not isinstance(ids, list) or not ids:
             errors.append(f"{decision_id} requires candidate_ids")
-            continue
-        referenced.extend(ids)
-        unknown = sorted(set(ids) - candidate_set)
-        if unknown:
-            errors.append(f"{decision_id} unknown candidates {unknown}")
+        else:
+            unknown = sorted(set(ids) - candidate_set)
+            if unknown:
+                errors.append(f"{decision_id} unknown candidates {unknown}")
         if not row.get("rationale"):
             errors.append(f"{decision_id} missing rationale")
-        if row.get("status") == "resolved_confirmed" and (row.get("before") is None) != (row.get("after") is None):
+        supersedes = row.get("supersedes")
+        if supersedes:
+            previous = decision_map.get(supersedes)
+            if previous is None:
+                errors.append(f"{decision_id} supersedes unknown adjudication {supersedes}")
+            else:
+                if previous.get("active", True) is not False:
+                    errors.append(f"{decision_id} supersedes an adjudication that is still active")
+                if not set(row.get("candidate_ids") or []) & set(previous.get("candidate_ids") or []):
+                    errors.append(f"{decision_id} supersedes an unrelated adjudication")
+        before, after = row.get("before"), row.get("after")
+        if row.get("status") == "resolved_confirmed" and (before is None) != (after is None):
             errors.append(f"{decision_id} correction requires both before and after")
+        if before is not None and after is not None:
+            if before == after:
+                errors.append(f"{decision_id} correction before and after are identical")
+            block_id = row.get("block_id")
+            current = source_blocks.get(block_id, {}).get("source_text") if block_id else None
+            if current is not None and str(after) not in str(current):
+                errors.append(f"{decision_id} corrected text is not present in current source block")
+        for evidence in row.get("evidence") or []:
+            value = str(evidence)
+            if value.lower().endswith(IMAGE_SUFFIXES):
+                evidence_path = (root / value).resolve()
+                try:
+                    evidence_path.relative_to(root)
+                except ValueError:
+                    errors.append(f"{decision_id} evidence escapes workspace")
+                else:
+                    if not evidence_path.is_file():
+                        errors.append(f"{decision_id} missing evidence {value}")
+
+    active = active_decisions(decisions)
+    referenced = [candidate_id for row in active for candidate_id in row.get("candidate_ids") or []]
     missing = sorted(candidate_set - set(referenced))
     seen: set[str] = set()
     repeated: set[str] = set()
@@ -68,23 +142,27 @@ def validate(candidates: list[dict], decisions: list[dict]) -> list[str]:
     if missing:
         errors.append(f"unadjudicated candidates {missing}")
     if repeated:
-        errors.append(f"candidates adjudicated more than once {sorted(repeated)}")
+        errors.append(f"candidates have more than one active adjudication {sorted(repeated)}")
+    for row in active:
+        if row.get("status") == "open_material" and not row.get("issue_id"):
+            errors.append(f"{row.get('adjudication_id')} open_material requires stable issue_id")
     return errors
 
 
 def projection(decisions: list[dict]) -> list[dict]:
     rows = []
-    for index, row in enumerate((item for item in decisions if item.get("status") == "open_material"), 1):
+    open_rows = [item for item in active_decisions(decisions) if item.get("status") == "open_material"]
+    for row in sorted(open_rows, key=lambda item: str(item.get("issue_id"))):
         rows.append({
-            "schema_version": "1.0",
-            "issue_id": f"UI{index:06d}",
+            "schema_version": "1.1",
+            "issue_id": row["issue_id"],
             "adjudication_id": row["adjudication_id"],
             "status": "open",
             "reader_impact": row["reader_impact"],
             "page_id": row.get("page_id"),
             "block_id": row.get("block_id"),
             "note": row["rationale"],
-            "source_image": next((value for value in row.get("evidence", []) if str(value).lower().endswith((".jpg", ".jpeg", ".png"))), None),
+            "source_image": next((value for value in row.get("evidence", []) if str(value).lower().endswith(IMAGE_SUFFIXES)), None),
         })
     return rows
 
@@ -94,11 +172,12 @@ def main() -> int:
     parser.add_argument("workspace", type=Path)
     parser.add_argument("--check", action="store_true")
     args = parser.parse_args()
-    audit = args.workspace.expanduser().resolve() / "90-audit"
+    root = args.workspace.expanduser().resolve()
+    audit = root / "90-audit"
     try:
         candidates = read_jsonl(audit / "uncertainty-candidates.jsonl")
         decisions = read_jsonl(audit / "uncertainty-adjudication.jsonl")
-        errors = validate(candidates, decisions)
+        errors = validate(root, candidates, decisions)
         expected = projection(decisions)
         target = audit / "uncertain-items.jsonl"
         if args.check:
@@ -106,13 +185,13 @@ def main() -> int:
             if actual != expected:
                 errors.append("uncertain-items.jsonl is not the current open-material projection")
         elif not errors:
-            target.write_text("".join(json.dumps(row, ensure_ascii=False) + "\n" for row in expected), encoding="utf-8")
+            atomic_write_jsonl(target, expected)
     except (OSError, ValueError, json.JSONDecodeError) as exc:
         errors = [str(exc)]
         candidates = []
         decisions = []
         expected = []
-    result = {"valid": not errors, "candidates": len(candidates), "adjudications": len(decisions), "open_material": len(expected), "errors": errors}
+    result = {"valid": not errors, "candidates": len(candidates), "adjudications": len(decisions), "active_adjudications": len(active_decisions(decisions)), "open_material": len(expected), "errors": errors}
     print(json.dumps(result, ensure_ascii=False, indent=2))
     return 0 if not errors else 1
 

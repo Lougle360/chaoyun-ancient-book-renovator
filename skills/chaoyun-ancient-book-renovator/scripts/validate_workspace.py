@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import importlib.util
 import json
 import re
 from pathlib import Path
@@ -16,6 +17,10 @@ STAGE_FILES = {
     "edited": "50-edited/blocks.jsonl",
 }
 ORDER = ["source", "normalized", "modernized", "edited"]
+REQUIRED_PREPUBLICATION_STAGES = [
+    "intake", "diagnosis", "source", "source_adjudicated",
+    "normalized", "modernized", "edited", "final_adjudicated",
+]
 REQUIRED = {"schema_version", "book_id", "page_id", "block_id", "source_page", "block_type", "source_text", "disposition"}
 PAGE_ID = re.compile(r"^P\d{6}$")
 UNCERTAINTY_STATUSES = {"resolved_confirmed", "resolved_noncontent", "resolved_structural", "resolved_duplicate", "open_material"}
@@ -42,14 +47,11 @@ def read_jsonl(path: Path) -> list[dict]:
     return records
 
 
-def validate_uncertainties(root: Path, errors: list[str], warnings: list[str]) -> dict[str, int]:
+def validate_uncertainties(root: Path, errors: list[str]) -> dict[str, int]:
     audit = root / "90-audit"
     candidate_path = audit / "uncertainty-candidates.jsonl"
     decision_path = audit / "uncertainty-adjudication.jsonl"
     open_path = audit / "uncertain-items.jsonl"
-    if not candidate_path.exists() and not decision_path.exists():
-        warnings.append("legacy uncertainty ledger: candidates and adjudications are not separated")
-        return {}
     for path in (candidate_path, decision_path, open_path):
         if not path.is_file():
             errors.append(f"missing {path.relative_to(root)}")
@@ -61,45 +63,24 @@ def validate_uncertainties(root: Path, errors: list[str], warnings: list[str]) -
     except (OSError, ValueError, json.JSONDecodeError) as exc:
         errors.append(str(exc))
         return {}
-    candidate_ids = [row.get("candidate_id") for row in candidates]
-    if any(not value for value in candidate_ids) or len(set(candidate_ids)) != len(candidate_ids):
-        errors.append("uncertainty candidates require unique candidate_id values")
-    candidate_set = set(candidate_ids)
-    decision_ids = [row.get("adjudication_id") for row in decisions]
-    if any(not value for value in decision_ids) or len(set(decision_ids)) != len(decision_ids):
-        errors.append("uncertainty adjudications require unique adjudication_id values")
-    referenced: list[str] = []
-    open_decisions: set[str] = set()
-    for row in decisions:
-        decision_id = row.get("adjudication_id")
-        status = row.get("status")
-        if status not in UNCERTAINTY_STATUSES:
-            errors.append(f"{decision_id} invalid uncertainty status")
-        if row.get("reader_impact") not in READER_IMPACTS:
-            errors.append(f"{decision_id} invalid reader_impact")
-        ids = row.get("candidate_ids")
-        if not isinstance(ids, list) or not ids:
-            errors.append(f"{decision_id} requires candidate_ids")
-        else:
-            referenced.extend(ids)
-            unknown = sorted(set(ids) - candidate_set)
-            if unknown:
-                errors.append(f"{decision_id} references unknown candidates {unknown}")
-        if not row.get("rationale"):
-            errors.append(f"{decision_id} missing rationale")
-        if status == "open_material" and decision_id:
-            open_decisions.add(decision_id)
-    if set(referenced) != candidate_set:
-        errors.append("candidate/adjudication coverage mismatch")
-    if len(referenced) != len(set(referenced)):
-        errors.append("a candidate is adjudicated more than once")
-    projected_ids = {row.get("adjudication_id") for row in open_items}
-    if projected_ids != open_decisions:
-        errors.append("uncertain-items.jsonl does not match open_material adjudications")
-    for row in open_items:
-        if row.get("status") != "open" or row.get("reader_impact") not in READER_IMPACTS or not row.get("note"):
-            errors.append(f"invalid open uncertainty item {row.get('issue_id')!r}")
-    return {"candidates": len(candidates), "adjudications": len(decisions), "open_material": len(open_items)}
+    helper = Path(__file__).resolve().parents[2] / "chaoyun-uncertainty-adjudicator" / "scripts" / "project_open_items.py"
+    if not helper.is_file():
+        errors.append("missing chaoyun-uncertainty-adjudicator validator")
+        return {}
+    spec = importlib.util.spec_from_file_location("chaoyun_uncertainty_contract", helper)
+    if spec is None or spec.loader is None:
+        errors.append("could not load chaoyun uncertainty validator")
+        return {}
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    errors.extend(module.validate(root, candidates, decisions))
+    expected = module.projection(decisions)
+    if open_items != expected:
+        errors.append("uncertain-items.jsonl is not the current open-material projection")
+    active = module.active_decisions(decisions)
+    high_open = sum(1 for row in active if row.get("status") == "open_material" and row.get("reader_impact") == "high")
+    return {"candidates": len(candidates), "adjudications": len(decisions),
+            "active_adjudications": len(active), "open_material": len(open_items), "high_open": high_open}
 
 
 def main() -> int:
@@ -180,7 +161,7 @@ def main() -> int:
 
     uncertainty_counts: dict[str, int] = {}
     if args.stage == "publication":
-        uncertainty_counts = validate_uncertainties(root, errors, warnings)
+        uncertainty_counts = validate_uncertainties(root, errors)
         declared_pdf = book.get("release_filename")
         if not declared_pdf:
             try:
@@ -207,10 +188,31 @@ def main() -> int:
             if not path.is_file() or path.stat().st_size == 0:
                 errors.append(f"missing or empty {relative}")
         stages = state.get("stages") if isinstance(state.get("stages"), dict) else {}
+        for stage in REQUIRED_PREPUBLICATION_STAGES:
+            status = (stages.get(stage) or {}).get("status") if isinstance(stages.get(stage), dict) else None
+            if status not in {"passed", "passed_with_ledger"}:
+                errors.append(f"run-state stage {stage} is not accepted: {status!r}")
         for stage in ORDER:
             status = (stages.get(stage) or {}).get("status") if isinstance(stages.get(stage), dict) else None
             if status in {"passed", "passed_with_ledger"} and not (root / STAGE_FILES[stage]).is_file():
                 errors.append(f"run-state marks {stage} {status} but {STAGE_FILES[stage]} is missing")
+
+        try:
+            report_data = read_json(root / "90-audit/quality-report.json")
+        except (OSError, ValueError, json.JSONDecodeError):
+            report_data = {}
+        grade = report_data.get("grade")
+        summary = report_data.get("uncertainty_summary")
+        if not isinstance(summary, dict):
+            errors.append("quality-report.json requires uncertainty_summary")
+        else:
+            for key in ("candidates", "adjudications", "active_adjudications", "open_material"):
+                if summary.get(key) != uncertainty_counts.get(key):
+                    errors.append(f"quality-report uncertainty_summary.{key} mismatch")
+        if grade == "A" and uncertainty_counts.get("open_material", 0):
+            errors.append("grade A cannot contain open_material uncertainty")
+        if grade == "B" and uncertainty_counts.get("high_open", 0):
+            errors.append("grade B cannot contain high-impact open_material uncertainty")
 
     result = {"valid": not errors, "stage": args.stage, "counts": counts,
               "uncertainties": uncertainty_counts, "warnings": warnings, "errors": errors}

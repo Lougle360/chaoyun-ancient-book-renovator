@@ -55,7 +55,7 @@ For scan-heavy books, do not publish a full-book reading edition until every inc
 
 ## State and stopping rules
 
-- Stages are `intake`, `diagnosis`, `source`, `normalized`, `modernized`, `edited`, and `publication`.
+- Stages are `intake`, `diagnosis`, `source`, `source_adjudicated`, `normalized`, `modernized`, `edited`, `final_adjudicated`, and `publication`.
 - A later stage may start only after the preceding gate is `passed` or explicitly `passed_with_ledger`.
 - Use append-only audit records and preserve stage outputs; do not rewrite earlier evidence in place.
 - Support resume from the last completed stage. A retry must not duplicate accepted records.

@@ -146,6 +146,7 @@ book-workspace/
 ```powershell
 python .\skills\chaoyun-ancient-book-renovator\scripts\self_test.py
 python .\skills\chaoyun-ancient-book-renovator\scripts\validate_workspace.py <book-workspace> --stage publication
+python .\skills\chaoyun-uncertainty-adjudicator\scripts\project_open_items.py <book-workspace> --check
 python .\skills\chaoyun-quality-publisher\scripts\audit_publication.py <book-workspace>
 ```
 

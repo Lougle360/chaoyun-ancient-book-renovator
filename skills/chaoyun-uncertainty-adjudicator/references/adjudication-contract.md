@@ -29,6 +29,8 @@
   "candidate_ids": ["UC000123", "UC000124"],
   "status": "resolved_noncontent",
   "reader_impact": "none",
+  "active": true,
+  "supersedes": null,
   "page_id": "P000017",
   "block_id": "P000017-B001",
   "rationale": "The overlap is a library stamp outside the caption.",
@@ -40,14 +42,16 @@
 }
 ```
 
-Every candidate belongs to exactly one adjudication. One adjudication may group repeated candidates. A review-discovered issue that had no prior candidate must first receive a new candidate record.
+Every candidate belongs to exactly one active adjudication. One adjudication may group repeated candidates. A review-discovered issue that had no prior candidate must first receive a new candidate record.
+
+A later review appends a new decision with `supersedes` pointing to the previous decision and changes the previous record to `active: false`. Historical decisions stay in the file. An active `open_material` decision also requires a stable `issue_id`, preferably derived from the canonical candidate ID rather than its row number.
 
 ## Open-item projection
 
 ```json
 {
   "schema_version": "1.0",
-  "issue_id": "UI000015",
+  "issue_id": "UI-UC000123",
   "adjudication_id": "UA000099",
   "status": "open",
   "reader_impact": "medium",

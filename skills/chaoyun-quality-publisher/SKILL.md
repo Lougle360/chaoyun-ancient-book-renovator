@@ -29,6 +29,7 @@ Use [references/publication-package.md](references/publication-package.md) for o
 - Inspect every rendered page for short books and all anomaly pages plus stratified samples for long books. Blank overflow pages, raw markup, orphan fragments, unexplained crops, and pages with extreme whitespace are defects, not stylistic choices.
 - Keep exactly one unambiguous official release artifact in the publication root. Archive or clearly label superseded drafts. If a file lock forces a versioned working filename, restore the declared official name before delivery.
 - Treat `book.json.release_filename` as canonical. `quality-report.json` must name the same file; a versioned fallback cannot pass the publication audit as the official release.
+- Render to a candidate path first, then install it with `python scripts/install_official_pdf.py <workspace> <candidate.pdf> --expected-pages N`. This command validates the PDF, detects a locked target, and uses same-directory atomic replacement.
 - Write `90-audit/quality-report.json` and a human-readable quality report.
 
 Run the deterministic package audit:

@@ -15,7 +15,7 @@ Keep three append-only or reproducible views:
 - `uncertainty-adjudication.jsonl`: the decision history, evidence, grouping, and any confirmed correction.
 - `uncertain-items.jsonl`: only the current unresolved material items that a reader or later reviewer must know.
 
-Before migrating an older workspace, copy its existing raw `uncertain-items.jsonl` records into candidates with stable IDs. Never erase the original history merely because most items are later closed.
+For an older workspace, run `python scripts/migrate_legacy_ledger.py <workspace>`. It creates a timestamped backup before writing stable candidate IDs. If the old ledger has no decisions, the migrated candidates deliberately remain unadjudicated and publication stays blocked.
 
 ## Adjudication workflow
 
@@ -30,7 +30,8 @@ Before migrating an older workspace, copy its existing raw `uncertain-items.json
 4. Record `reader_impact` as `none`, `low`, `medium`, or `high`. A doubt about an unused colophon name is not equivalent to a missing doctrinal sentence.
 5. Apply a source correction only for `resolved_confirmed`, recording exact before/after text and evidence. Do not repair source text from meaning alone.
 6. Project only `open_material` decisions into `uncertain-items.jsonl`. Merge repeated reports into one intelligible note and state whether ordinary reading is affected.
-7. Run `scripts/project_open_items.py <workspace> --check`. Before publication, run it without `--check` once to regenerate the open-item projection, then check again.
+7. When revising a decision, append a new active adjudication with `supersedes` and mark the previous record `active: false`. Never rewrite the old rationale. Every active `open_material` decision keeps a stable `issue_id` across revisions.
+8. Run `scripts/project_open_items.py <workspace> --check`. Before publication, run it without `--check` once to regenerate the open-item projection atomically, then check again.
 
 Read [references/adjudication-contract.md](references/adjudication-contract.md) when creating or validating records.
 

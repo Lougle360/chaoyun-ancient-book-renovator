@@ -22,7 +22,8 @@
 
 ## G2.5 Uncertainty adjudication
 
-- Every raw candidate belongs to exactly one adjudication; repeated reports may be grouped without deleting their IDs.
+- Every raw candidate belongs to exactly one active adjudication; repeated reports may be grouped without deleting their IDs.
+- A revised adjudication supersedes an inactive historical decision; every candidate has exactly one active decision and open issue IDs remain stable.
 - Each decision is classified as confirmed, noncontent, structural, duplicate, or materially open, with explicit reader impact.
 - Confirmed source corrections include before/after text and evidence. Meaning alone is not sufficient to repair a glyph.
 - The reader-facing ledger is regenerated from `open_material` decisions only and contains no resolved stamp, variant, cross-page, semantic-comment, or duplicate record.
@@ -57,6 +58,7 @@
 - PDF fonts embed correctly; headings, TOC, page breaks, images, and Chinese/Japanese glyphs render.
 - The quality report lists coverage, grade, models/tools, cost, unresolved items, and limitations.
 - The declared release path is checked for locks before generation. A temporary PDF is validated before atomic replacement; a lock may block replacement but must not create a second ambiguous official release.
+- Grade A requires zero active material items. Grade B rejects every active high-impact item. The quality report's candidate, adjudication, active-decision, and open counts must match the ledgers.
 - The release includes the declared cover, copyright/credits page, author/editor/producer credits, clickable TOC, and PDF bookmarks.
 - `release_filename` exists, matches the declared book title and edition label, and is the single unambiguous official PDF.
 - Link targets and local assets are validated programmatically. Every rendered page is inspected for short and medium books; long books receive full anomaly checks and stratified visual inspection.

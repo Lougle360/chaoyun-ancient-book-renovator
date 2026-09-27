@@ -101,6 +101,12 @@ def main() -> int:
     if pdf.is_file() and not pdf.read_bytes()[:5] == b"%PDF-":
         errors.append(f"official PDF does not have a PDF header: {pdf.relative_to(root)}")
 
+    allowed_pdfs = {pdf.resolve(), (root / "60-publication/modern-reading.pdf").resolve(),
+                    (root / "60-publication/source-comparison.pdf").resolve()}
+    extra_pdfs = [path for path in (root / "60-publication").glob("*.pdf") if path.resolve() not in allowed_pdfs]
+    if extra_pdfs:
+        errors.append("ambiguous extra PDFs in publication root: " + ", ".join(path.name for path in extra_pdfs))
+
     data = report_data
     if report.is_file() and data:
         if data.get("grade") not in {"A", "B", "C", "D"}:
@@ -132,6 +138,27 @@ def main() -> int:
                     "source-page accounting differs between book.json and quality report; "
                     f"got {book_source_pages}/{source_pages}"
                 )
+
+        uncertainty_summary = data.get("uncertainty_summary")
+        if not isinstance(uncertainty_summary, dict):
+            errors.append("quality-report.json requires uncertainty_summary")
+        open_ledger = root / "90-audit/uncertain-items.jsonl"
+        if not open_ledger.is_file():
+            errors.append("missing 90-audit/uncertain-items.jsonl")
+            open_items = []
+        else:
+            try:
+                open_items = [json.loads(line) for line in open_ledger.read_text(encoding="utf-8").splitlines() if line.strip()]
+            except (json.JSONDecodeError, OSError) as exc:
+                errors.append(f"invalid uncertain-items.jsonl: {exc}")
+                open_items = []
+        if isinstance(uncertainty_summary, dict) and uncertainty_summary.get("open_material") != len(open_items):
+            errors.append("quality-report uncertainty_summary.open_material mismatch")
+        high_open = sum(1 for row in open_items if row.get("reader_impact") == "high")
+        if data.get("grade") == "A" and open_items:
+            errors.append("grade A cannot contain open_material uncertainty")
+        if data.get("grade") == "B" and high_open:
+            errors.append("grade B cannot contain high-impact open_material uncertainty")
 
     if pdf.is_file() and pdf.read_bytes()[:5] == b"%PDF-":
         try:
