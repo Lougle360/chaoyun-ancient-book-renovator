@@ -72,3 +72,5 @@ Create `50-edited/reader-aids.json` under the `$chaoyun-reading-editor` reader-v
 - `pipeline_language_scan.forbidden_matches` covers reader-visible model verdicts, candidate fields, repair queues, internal state names, and validation messages. It must be zero.
 
 The report makes editorial decisions inspectable. It must not be fabricated from target numbers or used as a substitute for checking the source and reader edition.
+
+Workflow 1.5 additionally requires the book-specific outcomes and source-to-reader fidelity evidence in [delivery-and-rework.md](delivery-and-rework.md). The figure counts above are summaries only; actual figure-block inventory, rendered guidance and reviewed locations must also match. A first-occurrence quote, field count or block ID is not proof of accurate meaning.

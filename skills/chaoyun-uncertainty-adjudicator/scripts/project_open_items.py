@@ -7,7 +7,11 @@ import argparse
 import json
 import os
 import tempfile
+import sys
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from closure_evidence import validate_closure, validate_release_review, validate_pilot, located
 
 
 STATUSES = {"resolved_confirmed", "resolved_noncontent", "resolved_structural", "resolved_duplicate", "open_material"}
@@ -58,7 +62,7 @@ def active_decisions(decisions: list[dict]) -> list[dict]:
     return [row for row in decisions if row.get("active", True) is True]
 
 
-def validate(root: Path, candidates: list[dict], decisions: list[dict]) -> list[str]:
+def validate(root: Path, candidates: list[dict], decisions: list[dict], require_release: bool = False) -> list[str]:
     errors: list[str] = []
     candidate_ids = [row.get("candidate_id") for row in candidates]
     if any(not value for value in candidate_ids):
@@ -71,6 +75,16 @@ def validate(root: Path, candidates: list[dict], decisions: list[dict]) -> list[
     if source_path.is_file():
         source_blocks = {row.get("block_id"): row for row in read_jsonl(source_path) if row.get("block_id")}
     for row in candidates:
+        if row.get('schema_version') == '1.3':
+            for field in ('page_id', 'block_id', 'kind', 'excerpt', 'reason', 'owner_stage', 'created_at'):
+                if not isinstance(row.get(field), str) or not row[field].strip():
+                    errors.append(f"{row.get('candidate_id')} discovery requires {field}")
+            if row.get('owner_stage') not in {'source', 'normalized', 'modernized', 'edited', 'reader_revised', 'publication'}:
+                errors.append('discovery requires a responsible pipeline stage')
+            try:
+                located(root, row.get('input_ref'))
+            except (OSError, ValueError, TypeError, ImportError) as exc:
+                errors.append(f"{row.get('candidate_id')} discovery input is not bound: {exc}")
         if schema_12_or_later(row.get("schema_version")):
             for field in ("origin_stage", "review_cycle", "checkpoint", "created_by"):
                 if not str(row.get(field) or "").strip():
@@ -132,7 +146,7 @@ def validate(root: Path, candidates: list[dict], decisions: list[dict]) -> list[
                 errors.append(f"{decision_id} correction before and after are identical")
             block_id = row.get("block_id")
             current = source_blocks.get(block_id, {}).get("source_text") if block_id else None
-            if current is not None and str(after) not in str(current):
+            if row.get('active', True) is True and current is not None and str(after) not in str(current):
                 errors.append(f"{decision_id} corrected text is not present in current source block")
         for evidence in row.get("evidence") or []:
             value = str(evidence)
@@ -162,6 +176,46 @@ def validate(root: Path, candidates: list[dict], decisions: list[dict]) -> list[
     for row in active:
         if row.get("status") == "open_material" and not row.get("issue_id"):
             errors.append(f"{row.get('adjudication_id')} open_material requires stable issue_id")
+        if row.get('status', '').startswith('resolved_'):
+            if row.get('block_id') not in source_blocks:
+                errors.append(f"{row.get('adjudication_id')} closure requires an existing source block")
+            errors.extend(validate_closure(root, row))
+    by_candidate = {candidate: row for row in active for candidate in row.get('candidate_ids') or []}
+    for row in active:
+        if row.get('status') != 'resolved_duplicate':
+            continue
+        seen = set()
+        current = row
+        while current.get('status') == 'resolved_duplicate':
+            identifier = current.get('adjudication_id')
+            if identifier in seen:
+                errors.append('duplicate resolution cycle detected')
+                break
+            seen.add(identifier)
+            current = by_candidate.get(current.get('duplicate_of'))
+            if current is None:
+                errors.append(f"{row.get('adjudication_id')} duplicate requires an active canonical candidate")
+                break
+        else:
+            if current.get('status') == 'open_material':
+                errors.append(f"{row.get('adjudication_id')} duplicate cannot close while its canonical issue is open")
+    # Supersession is chronological, acyclic, and preserves an existing open issue identity.
+    positions = {row.get('adjudication_id'): index for index, row in enumerate(decisions)}
+    for index, row in enumerate(decisions):
+        previous_id = row.get('supersedes')
+        if previous_id and positions.get(previous_id, index) >= index:
+            errors.append(f"{row.get('adjudication_id')} supersedes must reference an earlier decision")
+        ancestor = decision_map.get(previous_id)
+        visited = set()
+        while ancestor and ancestor.get('adjudication_id') not in visited:
+            visited.add(ancestor.get('adjudication_id'))
+            if row.get('status') == 'open_material' and ancestor.get('issue_id') and row.get('issue_id') != ancestor['issue_id']:
+                errors.append('reopened uncertainty must retain the original issue_id')
+                break
+            ancestor = decision_map.get(ancestor.get('supersedes'))
+    if require_release:
+        errors.extend(validate_release_review(root, decisions))
+        errors.extend(validate_pilot(root, candidates))
     return errors
 
 
@@ -187,13 +241,22 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("workspace", type=Path)
     parser.add_argument("--check", action="store_true")
+    parser.add_argument("--publication", action="store_true", help="Require final-manuscript recheck of all adjudications")
+    parser.add_argument("--pilot", action="store_true", help="Read-only chapter-trial gate before scaling work")
     args = parser.parse_args()
     root = args.workspace.expanduser().resolve()
     audit = root / "90-audit"
+    if args.pilot:
+        try:
+            errors = validate_pilot(root, read_jsonl(audit / 'uncertainty-candidates.jsonl'))
+        except (OSError, ValueError) as exc:
+            errors = [str(exc)]
+        print(json.dumps({'valid': not errors, 'gate': 'chapter_trial', 'errors': errors}, ensure_ascii=False, indent=2))
+        return 0 if not errors else 1
     try:
         candidates = read_jsonl(audit / "uncertainty-candidates.jsonl")
         decisions = read_jsonl(audit / "uncertainty-adjudication.jsonl")
-        errors = validate(root, candidates, decisions)
+        errors = validate(root, candidates, decisions, require_release=args.publication)
         expected = projection(decisions)
         target = audit / "uncertain-items.jsonl"
         if args.check:

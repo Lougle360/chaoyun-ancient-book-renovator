@@ -1,5 +1,7 @@
 # Uncertainty adjudication contract
 
+Workflow 1.6 retains these ledger identities and statuses, but these compact examples are NOT sufficient closure evidence. New discoveries use schema 1.3 and the located input/routing fields; every active resolved decision, including legacy ones, must satisfy [closure-and-trial.md](closure-and-trial.md). Full publication also requires the chapter trial and final-manuscript recheck defined there. Do not clear a ledger by updating only status or schema version.
+
 ## Candidate record
 
 ```json

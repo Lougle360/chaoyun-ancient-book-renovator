@@ -9,12 +9,15 @@ Read the book from cover to glossary as the declared reader, not as the pipeline
 
 ## Modes
 
+- **Sample mode:** follow [the production contract](../chaoyun-ancient-book-renovator/references/reader-production.md) before full production. Obtain actual unaided answers in a separate invocation before source comparison. Method failures return to understanding/design. Sample acceptance does not certify the book.
+
 - **Manuscript mode:** required after `$chaoyun-reading-editor`. Review `50-edited/modern-reading.md`, apply accepted changes, and produce the reader-accepted manuscript before final uncertainty adjudication.
+- **Final-reader mode:** required for workflow 1.8 after the information-rich manuscript is reviewed. Preserve that manuscript under review history, remove or move non-reading process/guide matter, audit every AI-authored section, and run a new complete reading session on the exact compact output.
 - **Proof mode:** run on the publication candidate when pagination, figure placement, navigation, or rendered context may change the reading experience. Return content defects to manuscript mode and visual defects to `$chaoyun-quality-publisher`.
 
 ## Workflow
 
-1. Freeze the input hash and complete an uninterrupted reader pass before editing. Review introduction promises, prerequisites, navigation, continuity, terminology burden, examples, figures, repetition, source/editor distinction, and closure.
+1. Save an immutable input manuscript snapshot and its hash, then complete an uninterrupted reader pass before editing. Review introduction promises, prerequisites, navigation, continuity, terminology burden, examples, figures, repetition, source/editor distinction, and closure.
 2. Record every obstacle in `50-edited/reader-review.json`. A statement such as “reads well” is not evidence; identify where the reader stops, guesses, backtracks, or loses the argument.
 3. Create append-only `50-edited/reader-revision-ledger.jsonl` records using exactly one operation:
    - `add`: supply evidence-based context, explanation, example, transition, route, or caution.
@@ -23,10 +26,13 @@ Read the book from cover to glossary as the declared reader, not as the pipeline
    - `reorganize`: improve sequence, hierarchy, cross-reference, or figure placement while retaining a recoverable source order.
 4. Route OCR, missing-source, translation, attribution, or meaning uncertainty back to the responsible Skill and create an uncertainty candidate. Do not solve an evidence problem through fluent editing.
 5. Apply accepted revisions to the reading layer, update `reader-aids.json` when the introduction or glossary changes, and preserve contributing `block_id` values.
-6. Perform a fresh regression read of the revised full manuscript. Write `50-edited/reader-acceptance-report.json` only from the actual review and revision ledger.
-7. Run `scripts/validate_reader_revision.py <workspace>`. Publication remains blocked until it passes.
+6. Preserve the reviewed information-rich input as an immutable process snapshot. Make the final-reader cut without deleting source-bearing content: remove or move guide fields, internal reports, repeated scaffolding and AI prose that solves no demonstrated reader obstacle. Audit introductions, transitions, term explanations, examples, captions and figure notes for plain language, source basis and reading burden.
+7. Perform a fresh regression read of the exact final manuscript. Use meaningful contiguous reading units with complete coverage, preserve actual task/answer records, recheck core terms and close issues across cycles. Write schema 1.2 `50-edited/reader-acceptance-report.json` only from actual review, including workflow-1.8 `final_reader_cut` evidence. Different names/generated run IDs are not separate execution. Scripts may prepare pending inventories, never comprehension answers or passing judgments.
+8. Run `scripts/validate_reader_revision.py <workspace>`. Publication remains blocked until it passes.
 
 Read [references/reader-revision-contract.md](references/reader-revision-contract.md) before creating review or revision records.
+
+Do not mechanically add a preface, summary or example to every section. First establish the actual reader obstacle. A section may need no edit; a zero-edit cycle may pass with full evidenced review. Do not stop because a requested number of cycles has been reached: cycle count is only a minimum activity record, never acceptance. Stop repeating cycles when the same blockers survive two consecutive cycles with no new evidence: preserve the draft, report the unresolved reason, and request only the missing evidence or decision. Budget exhaustion also stops work; a stop is not acceptance.
 
 ## Boundaries
 
@@ -37,4 +43,4 @@ Read [references/reader-revision-contract.md](references/reader-revision-contrac
 
 ## Gate
 
-Pass when all required reading dimensions have evidence-based verdicts, every applied change has provenance and before/after state where applicable, no blocking reader issue remains, the acceptance hash matches the final manuscript, and medium/high semantic-risk changes are linked to the unified uncertainty lifecycle.
+Pass when all required reading dimensions have evidence-based regression verdicts, every applied change replays exactly between frozen snapshots, no unresolved reader issue remains from any cycle, the acceptance hash and section evidence match the final manuscript, and medium/high semantic-risk changes have active evidence-backed confirmation in the unified uncertainty lifecycle. Deterministic validation cannot certify that a reader truly understands; report that limit and retain the actual comprehension review.

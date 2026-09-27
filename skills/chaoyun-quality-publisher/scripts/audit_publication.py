@@ -7,7 +7,15 @@ import argparse
 import importlib.util
 import json
 import re
+import sys
+import subprocess
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from validate_release_binding import validate as validate_release_binding
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / 'chaoyun-ancient-book-renovator' / 'scripts'))
+from validate_production_plan import validate as validate_production_plan
 
 
 IMAGE = re.compile(r"!\[[^\]]*\]\(([^)]+)\)")
@@ -26,6 +34,7 @@ INTERNAL_MESSAGES = (
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("workspace", type=Path)
+    parser.add_argument("--candidate-pdf", type=Path)
     args = parser.parse_args()
     root = args.workspace.expanduser().resolve()
     errors: list[str] = []
@@ -49,13 +58,20 @@ def main() -> int:
 
     target_reader = str(book_data.get("target_reader") or "")
     edition_label = str(book_data.get("edition_label") or "")
-    ordinary_reader = "普通" in target_reader or "ordinary" in target_reader.lower() or "现代白话" in edition_label
+    ordinary_reader = book_data.get("delivery_mode") not in {"source_comparison", "evidence_archive"}
+    if book_data.get("delivery_mode") not in {"ordinary_reader", "source_comparison", "evidence_archive"}:
+        errors.append("book.json requires explicit delivery_mode")
     editorial_path = root / "50-edited/editorial-report.json"
     editorial_data: dict = {}
     acceptance_data: dict = {}
     reader_counts: dict[str, int] = {}
     revision_counts: dict[str, int] = {}
     if ordinary_reader:
+        errors.extend(validate_production_plan(root))
+        uncertainty_gate = Path(__file__).resolve().parents[2] / 'chaoyun-uncertainty-adjudicator/scripts/project_open_items.py'
+        checked = subprocess.run([sys.executable, '-X', 'utf8', str(uncertainty_gate), str(root), '--check', '--publication'], capture_output=True, text=True, encoding='utf-8', errors='replace')
+        if checked.returncode:
+            errors.append('uncertainty publication gate failed: ' + checked.stdout + checked.stderr)
         if not editorial_path.is_file():
             errors.append("ordinary-reader edition requires 50-edited/editorial-report.json")
         else:
@@ -117,6 +133,10 @@ def main() -> int:
     except ValueError:
         errors.append(f"declared official PDF escapes workspace: {declared_pdf!r}")
         pdf = root / "60-publication/modern-reading.pdf"
+    if args.candidate_pdf:
+        pdf = args.candidate_pdf.resolve()
+        if not pdf.is_relative_to(root):
+            errors.append("candidate PDF escapes workspace")
 
     required = [
         root / "60-publication/modern-reading.md",
@@ -155,8 +175,13 @@ def main() -> int:
 
     if pdf.is_file() and not pdf.read_bytes()[:5] == b"%PDF-":
         errors.append(f"official PDF does not have a PDF header: {pdf.relative_to(root)}")
+    if ordinary_reader:
+        errors.extend(validate_release_binding(root, pdf))
+        alias = root / "60-publication/modern-reading.pdf"
+        if not args.candidate_pdf and alias.is_file() and pdf.is_file() and alias.read_bytes() != pdf.read_bytes():
+            errors.append("internal PDF alias differs from the official release")
 
-    allowed_pdfs = {pdf.resolve(), (root / "60-publication/modern-reading.pdf").resolve(),
+    allowed_pdfs = {pdf.resolve(), (root / str(declared_pdf or '60-publication/modern-reading.pdf')).resolve(), (root / "60-publication/modern-reading.pdf").resolve(),
                     (root / "60-publication/source-comparison.pdf").resolve()}
     extra_pdfs = [path for path in (root / "60-publication").glob("*.pdf") if path.resolve() not in allowed_pdfs]
     if extra_pdfs:
@@ -172,6 +197,8 @@ def main() -> int:
             audit = data.get(key)
             if audit is not None and not isinstance(audit, dict):
                 errors.append(f"quality-report.json {key} must be an object")
+            if data.get("grade") in {"A", "B"} and (not isinstance(audit, dict) or audit.get("passed") is not True):
+                errors.append(f"grade A/B requires a passing {key}")
 
         source_pages = data.get("source_pages_total") or data.get("source_pages") or data.get("pages")
         semantic = data.get("semantic_audit")
@@ -259,7 +286,7 @@ def main() -> int:
                 errors.append(f"official PDF page count differs from report: {actual_pages}/{reported_pages}")
 
             inspected = publication.get("rendered_pages_inspected")
-            if actual_pages <= 300 and isinstance(inspected, int) and inspected != actual_pages:
+            if ordinary_reader and inspected != actual_pages:
                 errors.append(
                     "short/medium book requires full rendered-page inspection; "
                     f"got {inspected}/{actual_pages}"

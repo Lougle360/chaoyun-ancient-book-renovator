@@ -5,6 +5,7 @@
 - Source opens and its SHA-256, byte size, page count, and filename are recorded.
 - Encryption, corruption, missing pages, duplicates, and excluded pages are accounted for.
 - Included, excluded, blank/noncontent, and unreadable page counts reconcile exactly to the physical PDF page count.
+- `delivery_mode` is explicit. Source identity and `source_pdf_pages` are verified against the actual intake PDF, not a report total. Every physical page has at least one block record, including a reasoned placeholder for blank, excluded or unreadable pages.
 - The source is never overwritten.
 
 ## G1 Diagnosis
@@ -28,6 +29,8 @@
 - Confirmed source corrections include before/after text and evidence. Meaning alone is not sufficient to repair a glyph.
 - The reader-facing ledger is regenerated from `open_material` decisions only and contains no resolved stamp, variant, cross-page, semantic-comment, or duplicate record.
 - Candidate count, adjudicated count, and material-open count are reported separately.
+- Active closure requires located file evidence, checked/not-applicable decisions across six impact scopes, an independently executed bound review, and replayable applied changes where corrected. A duplicate must resolve to a closed canonical candidate. Evidence failure blocks the gate even when the projected open count is zero.
+- A representative real chapter trial precedes scale-up; final publication independently rechecks every active decision against the frozen manuscript. Both artifacts are checked by `project_open_items.py --check --publication`; self-tests cannot count as an actual trial.
 
 ## G3 Normalization
 
@@ -37,7 +40,10 @@
 
 ## G4 Modernization
 
+For ordinary-reader work, first pass workflow 1.8 `book_understood`, `reader_designed` and `sample_accepted` under [reader-production.md](reader-production.md). The understanding brief explains the whole source; the design places prerequisites/examples; a separate actual sample reader tests the method. Only sample translation is permitted before these prerequisites. Their validator checks bindings and task evidence, never grants semantic acceptance. Existing 1.6 uncertainty trial requirements remain in force and use the same chapter where possible.
+
 - Every source content block has a modernized record or an explicit disposition.
+- A translated/retained record requires nonempty stage text. Stage ID equality alone cannot certify transcription or translation completion.
 - Classical Chinese, modern Japanese, classical Japanese, and kanbun use the correct route.
 - The modern text adds no unsupported fact, causal claim, or certainty.
 - High-risk blocks receive an independent comparison or enter the uncertainty ledger.
@@ -57,9 +63,12 @@
 
 ## G5.5 Whole-book reader revision
 
+Workflow 1.8 requires reader review/acceptance 1.2: meaningful contiguous units, actual task/answer/assessment files and provenance, with task links from each unit and core glossary sample. It additionally binds an immutable process-edition snapshot and the six final-reader-cut checks. Repeated generic answers are not section-specific evidence. Old acceptance cannot be upgraded by altering a schema field. Full coverage is preserved without requiring a fake comprehension report for each small heading. The 1.1 mechanics below remain applicable except for the upgraded acceptance version and reading-unit boundaries.
+
 - `$chaoyun-reader-experience-reviser` reads the complete manuscript before editing, records reader obstacles across all nine dimensions, and applies traceable `add`, `delete_from_reading_path`, `rewrite`, or `reorganize` operations.
 - Deletion from the reading path preserves source material and provenance. Medium/high semantic-risk revisions enter the unified uncertainty lifecycle.
 - A fresh regression reviewer differs from the revision producer. The acceptance hash matches the final manuscript, no proposed or returned revision remains unresolved, and glossary sampling passes.
+- Reader schema 1.1 requires real input/output snapshots and replayable edits, evidenced closure across every cycle, complete section-level comprehension records, all core terms rechecked, and separate production/review execution records. See the reader-revision contract; strings naming different reviewers alone do not prove independent review.
 
 ## G6 Publication
 
@@ -72,7 +81,9 @@
 - For ordinary-reader editions, `editorial-report.json` must pass its contract and its high-impact count must match the adjudication ledger. Structural and visual success cannot upgrade a semantically blocked edition.
 - The release includes the declared cover, copyright/credits page, author/editor/producer credits, clickable TOC, and PDF bookmarks.
 - `release_filename` exists, matches the declared book title and edition label, and is the single unambiguous official PDF.
-- Link targets and local assets are validated programmatically. Every rendered page is inspected for short and medium books; long books receive full anomaly checks and stratified visual inspection.
+- Link targets and local assets are validated programmatically. Every ordinary-reader PDF page is inspected regardless of book length; other delivery modes declare their inspection scope.
+- Candidate promotion runs both gates before replacing the official PDF. Book-specific outcomes and source-to-reader fidelity evidence are required; see [delivery-and-rework.md](delivery-and-rework.md).
+- For ordinary-reader editions, the release manifest binds manuscript, publication Markdown, assets, PDF and page images; source fidelity and actual reader comprehension still require substantive review.
 
 ## Grade rule
 

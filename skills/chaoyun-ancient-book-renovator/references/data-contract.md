@@ -2,6 +2,8 @@
 
 ## Directory layout
 
+Workflow 1.8 extends the existing 1.7 reader-production and 1.6 doubt-closure contracts. Ordinary-reader work adds `40-modernized/book-understanding.md`, `50-edited/editorial-plan.md`, `50-edited/production-plan.json`, `50-edited/sample/reader-sample.md`, an immutable process-edition snapshot, and final-reader-cut evidence with retained reading-session files. Their single authoritative contract is [reader-production.md](reader-production.md). Reader review/acceptance remains schema 1.2; append-only revision events retain 1.1. Existing 1.6 pilot/closure files remain required. Do not initialize fake successful planning or sample artifacts.
+
 ```text
 book-workspace/
 |-- book.json
@@ -30,6 +32,7 @@ book-workspace/
 |   |-- reader-review.json
 |   |-- reader-revision-ledger.jsonl
 |   |-- reader-acceptance-report.json
+|   |-- review-history/ (immutable cycle snapshots and execution records)
 |   `-- editorial-report.json
 |-- 60-publication/
 |   |-- modern-reading.md
@@ -43,10 +46,13 @@ book-workspace/
     |-- uncertainty-candidates.jsonl
     |-- uncertainty-adjudication.jsonl
     |-- uncertain-items.jsonl
+    |-- release-binding.json (final file hashes and per-page visual review)
     `-- quality-report.json
 ```
 
 Files appear only when their stage runs. Do not create fake empty outputs to satisfy the layout.
+
+New workspaces declare workflow schema 1.8 and explicit `delivery_mode`. Reader review/acceptance use schema 1.2 plus the workflow-1.8 `final_reader_cut` object. Ordinary-reader editions require the production-plan handoff plus `50-edited/delivery-contract.json`, `90-audit/fidelity-review.json`, `90-audit/pilot-review.json`, and `90-audit/uncertainty-release-review.json` when adjudications exist. The uncertainty Skill's `references/closure-and-trial.md` still defines the 1.6 located discovery, closure, trial and final-recheck evidence. Existing books need fresh review, not automatic successful migration. Preserve old records and all unresolved issue identities.
 
 For an ordinary-reader edition, `50-edited/reader-aids.json`, the three whole-book reader-review artifacts, and `50-edited/editorial-report.json` are required before publication. The reader-aids file and revision ledger are item-level evidence sources; the editorial report is a derived summary and may not self-certify counts. Its schema and evidence rules are defined in [editorial-evidence-contract.md](editorial-evidence-contract.md). Supplemental PDFs stay below `60-publication/supplements/`; the publication root contains only the single declared official reader PDF and an optional exact internal alias.
 

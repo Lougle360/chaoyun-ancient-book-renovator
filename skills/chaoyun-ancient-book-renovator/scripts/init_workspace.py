@@ -17,6 +17,9 @@ STAGES = [
     "source",
     "source_adjudicated",
     "normalized",
+    "book_understood",
+    "reader_designed",
+    "sample_accepted",
     "modernized",
     "edited",
     "reader_revised",
@@ -56,6 +59,7 @@ def main() -> int:
     parser.add_argument("--author")
     parser.add_argument("--editor")
     parser.add_argument("--producer")
+    parser.add_argument("--delivery-mode", choices=["ordinary_reader", "source_comparison", "evidence_archive"], default="ordinary_reader")
     parser.add_argument(
         "--copy-source",
         action="store_true",
@@ -99,7 +103,8 @@ def main() -> int:
         output / "book.json",
         {
             "schema_version": "1.0",
-            "workflow_schema_version": "1.3",
+            "workflow_schema_version": "1.8",
+            "delivery_mode": args.delivery_mode,
             "book_id": book_id,
             "title": source.stem,
             "edition_label": args.edition_label,
@@ -116,10 +121,11 @@ def main() -> int:
         output / "run-state.json",
         {
             "schema_version": "1.0",
-            "workflow_schema_version": "1.3",
+            "workflow_schema_version": "1.8",
             "book_id": book_id,
             "updated_at": now,
-            "stages": {stage: {"status": "pending"} for stage in STAGES},
+            "stages": {stage: {"status": "pending"} for stage in STAGES
+                       if args.delivery_mode == "ordinary_reader" or stage not in {"book_understood", "reader_designed", "sample_accepted"}},
         },
     )
     (output / "90-audit/events.jsonl").touch()

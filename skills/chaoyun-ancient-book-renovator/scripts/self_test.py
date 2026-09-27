@@ -8,9 +8,11 @@ import json
 import subprocess
 import sys
 import tempfile
+import re
 from pathlib import Path
 
 from pypdf import PdfWriter
+import pymupdf
 
 
 HERE = Path(__file__).resolve().parent
@@ -19,11 +21,15 @@ PUBLISH_AUDIT = SKILLS / "chaoyun-quality-publisher" / "scripts" / "audit_public
 INSTALL_PDF = SKILLS / "chaoyun-quality-publisher" / "scripts" / "install_official_pdf.py"
 PROJECT_OPEN = SKILLS / "chaoyun-uncertainty-adjudicator" / "scripts" / "project_open_items.py"
 MIGRATE = SKILLS / "chaoyun-uncertainty-adjudicator" / "scripts" / "migrate_legacy_ledger.py"
+sys.path.insert(0, str(SKILLS / "chaoyun-reader-experience-reviser" / "scripts"))
+from reader_evidence import sections
+sys.path.insert(0, str(SKILLS / 'chaoyun-uncertainty-adjudicator/scripts'))
+from closure_evidence import SCOPES, sha, closure_digest
 
 
 def run(*args: str, expect: int = 0) -> subprocess.CompletedProcess[str]:
     result = subprocess.run(
-        [sys.executable, *args], text=True, capture_output=True,
+        [sys.executable, "-X", "utf8", *args], text=True, capture_output=True,
         encoding="utf-8", errors="replace",
     )
     if result.returncode != expect:
@@ -39,6 +45,57 @@ def write_jsonl(path: Path, rows: list[dict]) -> None:
     path.write_text("".join(json.dumps(row, ensure_ascii=False) + "\n" for row in rows), encoding="utf-8")
 
 
+def fixture_closure(workspace: Path, decision: dict) -> None:
+    """Synthetic evidence to test structure; this is not a real adjudication."""
+    reference = {'path': '20-source/blocks.jsonl', 'sha256': sha(workspace / '20-source/blocks.jsonl'), 'quote': '天地玄黄'}
+    closure = {'action': 'confirmed_unchanged', 'producer': 'fixture-producer', 'producer_run_id': 'fixture-production',
+               'evidence': [reference], 'impact_review': {scope: {'status': 'not_applicable', 'reason': 'Synthetic source-stage fixture; publication is independently rechecked.'} for scope in SCOPES}}
+    closure['impact_review']['source'] = {'status': 'checked', 'reason': 'Synthetic source fixture.', 'artifacts': [reference]}
+    decision['closure'] = closure
+    record = {'reviewer': 'fixture-reviewer', 'run_id': 'fixture-review-' + decision['adjudication_id'],
+              'adjudication_id': decision['adjudication_id'], 'status': 'passed',
+              'fidelity_evidence': 'Synthetic test only.', 'reader_evidence': 'Synthetic test only.',
+              'closure_sha256': closure_digest(decision)}
+    relative = '90-audit/closure-' + decision['adjudication_id'] + '.json'
+    write_json(workspace / relative, record)
+    closure['review_record'] = {'path': relative, 'sha256': sha(workspace / relative)}
+    decision['closure'] = closure
+
+
+def fixture_final_uncertainty(workspace: Path, decisions: list[dict]) -> None:
+    report = {
+        'producer': 'fixture-producer', 'producer_run_id': 'fixture-production', 'reviewer': 'fixture-reviewer',
+        'input_hashes': {path: sha(workspace / path) for path in ['90-audit/uncertainty-candidates.jsonl', '90-audit/uncertainty-adjudication.jsonl', '50-edited/modern-reading.md']},
+        'items': [{'adjudication_id': row['adjudication_id'], 'result': 'disclosed_unresolved' if row['status'] == 'open_material' else 'verified',
+                   'reader_affected': True, 'quote': '天地玄黄', 'evidence': 'Synthetic final-manuscript check.'}
+                  for row in decisions if row.get('active', True)]}
+    path = workspace / '90-audit/final-uncertainty-execution.json'
+    write_json(path, {'reviewer': 'fixture-reviewer', 'run_id': 'fixture-final-review', 'status': 'passed',
+                     'final_review_sha256': hashlib.sha256(json.dumps(report, ensure_ascii=False, sort_keys=True).encode('utf-8')).hexdigest()})
+    report['review_record'] = {'path': path.relative_to(workspace).as_posix(), 'sha256': sha(path)}
+    write_json(workspace / '90-audit/uncertainty-release-review.json', report)
+
+
+def fixture_pilot(workspace: Path):
+    report = {'kind': 'chapter_trial', 'workflow_version': '1.6',
+              'source_pdf_sha256': json.loads((workspace / '00-intake/source-manifest.json').read_text(encoding='utf-8'))['source_sha256'],
+              'producer': 'fixture-producer', 'producer_run_id': 'fixture-production',
+              'selection_reason': 'Synthetic single-block fixture.', 'risk_coverage': ['glyph'],
+              'limitations': 'Synthetic test data; NOT a completed real-book benchmark.',
+              'before': {'path': '50-edited/review-history/RC0001/input.md', 'sha256': sha(workspace / '50-edited/review-history/RC0001/input.md'), 'quote': '天地玄黄'},
+              'after': {'path': '50-edited/review-history/RC0001/output.md', 'sha256': sha(workspace / '50-edited/review-history/RC0001/output.md'), 'quote': '天地玄黄'},
+              'sample_block_ids': ['P000001-B001'], 'candidate_ids': ['UC000001'],
+              'cases': [{'candidate_id': 'UC000001', 'result': 'verified', 'evidence': 'Synthetic fixture only.'}],
+              'new_errors': [], 'status': 'passed', 'elapsed_seconds': 0, 'cost': 0, 'cost_unit': 'synthetic-test'}
+    record = {'reviewer': 'fixture-blind-reviewer', 'run_id': 'fixture-blind-run', 'expected_answers_withheld': True,
+              'findings': 'Synthetic test record, not actual reader feedback.',
+              'pilot_sha256': hashlib.sha256(json.dumps(report, ensure_ascii=False, sort_keys=True).encode('utf-8')).hexdigest()}
+    path = workspace / '90-audit/pilot-execution.json'
+    write_json(path, record)
+    report['review_record'] = {'path': '90-audit/pilot-execution.json', 'sha256': sha(path)}
+    write_json(workspace / '90-audit/pilot-review.json', report)
+
+
 def make_pdf(path: Path, pages: int = 1) -> None:
     writer = PdfWriter()
     for _ in range(pages):
@@ -50,7 +107,7 @@ def make_pdf(path: Path, pages: int = 1) -> None:
 def set_accepted_stages(workspace: Path) -> None:
     state_path = workspace / "run-state.json"
     state = json.loads(state_path.read_text(encoding="utf-8"))
-    for stage in ("intake", "diagnosis", "source", "source_adjudicated", "normalized", "modernized", "edited", "reader_revised", "final_adjudicated"):
+    for stage in ("intake", "diagnosis", "source", "source_adjudicated", "normalized", "book_understood", "reader_designed", "sample_accepted", "modernized", "edited", "reader_revised", "final_adjudicated"):
         state["stages"][stage]["status"] = "passed"
     write_json(state_path, state)
 
@@ -64,7 +121,7 @@ def quality_report(workspace: Path, grade: str, counts: dict[str, int]) -> None:
             "semantic_audit": {"passed": True, "page_level_visual_coverage": 1},
             "structural_audit": {"passed": True},
             "uncertainty_summary": counts,
-            "publication": {"pdf": "60-publication/source·现代白话版.pdf", "pdf_pages": 1},
+            "publication": {"pdf": "60-publication/source·现代白话版.pdf", "pdf_pages": 1, "rendered_pages_inspected": 1},
         },
     )
 
@@ -149,6 +206,9 @@ def reader_aids(workspace: Path) -> None:
 
 
 def reader_revision(workspace: Path) -> None:
+    from test_reader_production import fixture_plan, fixture_session
+    fixture_plan(workspace)
+    reading_session = fixture_session(workspace, '50-edited/modern-reading.md')
     dimensions = {
         name: {"verdict": "passed", "findings": []}
         for name in (
@@ -157,14 +217,30 @@ def reader_revision(workspace: Path) -> None:
         )
     }
     dimensions["introduction_promise"] = {
-        "verdict": "needs_revision", "findings": ["The draft lacked a plain opening sentence."],
+        "verdict": "needs_revision", "findings": [{"revision_id": "RR000001", "problem": "The draft lacked a plain opening sentence."}],
     }
     markdown = workspace / "50-edited/modern-reading.md"
+    output = markdown.read_text(encoding="utf-8")
+    added = "这是一个单页测试读本。\n\n"
+    original = output.replace(added, "", 1)
+    frozen = workspace / "50-edited/review-history/RC0001"
+    frozen.mkdir(parents=True, exist_ok=True)
+    (frozen / "input.md").write_text(original, encoding="utf-8")
+    (frozen / "output.md").write_text(output, encoding="utf-8")
+    input_hash = hashlib.sha256((frozen / "input.md").read_bytes()).hexdigest()
+    output_hash = hashlib.sha256(markdown.read_bytes()).hexdigest()
+    execution = {}
+    for role, actor in (("producer", "fixture-reviser"), ("reviewer", "fixture-regression-reviewer")):
+        path = frozen / (role + ".json")
+        write_json(path, {"actor": actor, "run_id": role + "-fixture-run", "output_sha256": output_hash})
+        execution[role + "_record"] = path.relative_to(workspace).as_posix()
+        execution[role + "_record_sha256"] = hashlib.sha256(path.read_bytes()).hexdigest()
     write_json(
         workspace / "50-edited/reader-review.json",
         {
-            "schema_version": "1.0", "cycle_id": "RC0001", "mode": "manuscript",
-            "input_sha256": hashlib.sha256(b"fixture draft before reader revision").hexdigest(),
+            "schema_version": "1.2", "cycle_id": "RC0001", "mode": "manuscript",
+            "input_snapshot": "50-edited/review-history/RC0001/input.md",
+            "input_sha256": input_hash,
             "target_reader": "modern ordinary reader", "reviewer": "fixture-reader-auditor",
             "dimensions": dimensions,
             "glossary_samples": [{"term": "天地", "plain_enough": True, "context_specific": True,
@@ -176,8 +252,12 @@ def reader_revision(workspace: Path) -> None:
         "schema_version": "1.0", "event_id": "RRE000001", "revision_id": "RR000001",
         "cycle_id": "RC0001", "operation": "add",
         "reader_problem": "The draft lacked a plain opening sentence.",
-        "block_ids": ["P000001-B001"], "section": "本书介绍", "before": None,
-        "after": "这是一个单页测试读本。", "preservation": None,
+        "block_ids": ["P000001-B001"], "section": "本书介绍", "before": "",
+        "after": added, "preservation": None,
+        "start_offset": len("# 本书介绍\n\n"), "end_offset": len("# 本书介绍\n\n"),
+        "input_snapshot": "50-edited/review-history/RC0001/input.md", "input_sha256": input_hash,
+        "output_snapshot": "50-edited/review-history/RC0001/output.md", "output_sha256": output_hash,
+        "resolution_review": {"reviewer": "fixture-regression-reviewer", "status": "passed", "evidence": "The opening sentence states the fixture's scope."},
         "evidence": ["P000001-B001"], "semantic_risk": "low",
         "uncertainty_candidate_id": None, "status": "applied",
         "rationale": "Adds a plain reader orientation without changing the source claim.",
@@ -185,20 +265,70 @@ def reader_revision(workspace: Path) -> None:
     write_json(
         workspace / "50-edited/reader-acceptance-report.json",
         {
-            "schema_version": "1.0", "cycle_id": "RC0001", "mode": "manuscript",
+            "schema_version": "1.2", "cycle_id": "RC0001", "mode": "manuscript",
+            "reading_session": reading_session,
+            **execution,
+            "dimension_checks": {name: {"status": "passed", "evidence": "Fixture check only; not a real reader judgment."} for name in dimensions},
+            "section_reviews": [{
+                "start_line": start, "end_line": end,
+                "text_sha256": hashlib.sha256("\n".join(output.splitlines()[start-1:end]).encode("utf-8")).hexdigest(),
+                "quote": output.splitlines()[start-1], "reader_question": "What does this fixture section show?",
+                "plain_answer": f"Synthetic fixture section at line {start}.", "prerequisites": "No specialist knowledge is assumed in this fixture.",
+                "comprehension_evidence": f"Synthetic fixture only, unit {start}-{end}; not semantic acceptance.",
+                "task_ids": [f"U{start}"],
+                "block_ids": ["P000001-B001"], "status": "passed", "remaining_obstacles": [],
+            } for start, end in sections(output)],
+            "glossary_samples": [{"term": "天地", "plain_enough": True, "context_specific": True,
+                                  "example_helpful": True, "issue": None, "quote": "天空与大地", "evidence": "Fixture glossary explanation is present.", "task_ids": ["T2", "T3"], "answer_quote": "The pair opens a sentence about the world."}],
             "producer": "fixture-reviser", "reviewer": "fixture-regression-reviewer", "status": "passed",
             "output_sha256": hashlib.sha256(markdown.read_bytes()).hexdigest(),
+            "final_reader_cut": {
+                "status": "passed", "rendering_profile": "compact_final_reader",
+                "process_snapshot": "50-edited/review-history/RC0001/input.md",
+                "process_sha256": input_hash, "output_sha256": output_hash,
+                "checks": {name: {"status": "passed", "evidence": "Synthetic contract fixture only."} for name in (
+                    "ai_authored_material", "guide_material_removed", "chapter_completeness",
+                    "terminology_plainness", "figure_truthfulness", "pipeline_language_absent",
+                )},
+            },
             "regression_review": "passed", "blocking_issues": [],
             "counts": {"add": 1, "delete_from_reading_path": 0, "reorganize": 0, "rewrite": 0},
         },
     )
 
 
+def rendered_reader(workspace: Path) -> str:
+    aids = json.loads((workspace / "50-edited/reader-aids.json").read_text(encoding="utf-8"))
+    parts = ["# 本书介绍", "这是一个单页测试读本。", *aids["introduction"]["sections"].values(), "# 正文", "<!-- source:P000001-B001 -->", "天地玄黄。天是玄色的，地是黄色的。", "# 本书术语表"]
+    for entry in aids["glossary"]["entries"]:
+        parts += ["## " + entry["term"], "天空与大地。", entry["plain_definition"], entry["contextual_definition"], entry["usage_example"], entry["common_confusions"], "、".join(entry["related_terms"])]
+    return "\n\n".join(parts) + "\n"
+
+
+def release_fixture(workspace: Path, pdf: Path) -> None:
+    """Real rendering for mechanical tests, explicitly not a reader-quality benchmark."""
+    text = (workspace / "60-publication/modern-reading.md").read_text(encoding="utf-8")
+    text = re.sub(r'<!--.*?-->', '', text, flags=re.S)
+    with pymupdf.open() as doc:
+        page = doc.new_page(width=1100, height=2000)
+        page.insert_text((30, 30), re.sub(r'^#{1,6}\s+', '', text, flags=re.M), fontname="china-s", fontsize=10)
+        doc.save(pdf)
+        proof = workspace / "90-audit/fixture-page.png"
+        page.get_pixmap(matrix=pymupdf.Matrix(1, 1), colorspace=pymupdf.csRGB, alpha=False).save(proof)
+    write_json(workspace / "90-audit/release-binding.json", {
+        "manuscript_sha256": hashlib.sha256((workspace / "50-edited/modern-reading.md").read_bytes()).hexdigest(),
+        "markdown_sha256": hashlib.sha256((workspace / "60-publication/modern-reading.md").read_bytes()).hexdigest(),
+        "pdf_sha256": hashlib.sha256(pdf.read_bytes()).hexdigest(), "assets": {},
+        "page_reviews": [{"page": 1, "image": "90-audit/fixture-page.png", "status": "passed", "issues": [],
+                          "reviewer": "fixture-proof-reviewer", "evidence": "Synthetic rendering fixture, not human proof approval."}],
+    })
+
+
 def main() -> int:
     with tempfile.TemporaryDirectory(prefix="chaoyun-skill-test-") as temporary:
         temp = Path(temporary)
         source = temp / "source.pdf"
-        source.write_bytes(b"%PDF-1.4\n% intake fixture\n%%EOF\n")
+        make_pdf(source)
         workspace = temp / "workspace"
         run(str(HERE / "init_workspace.py"), str(source), str(workspace), "--copy-source",
             "--edition-label", "现代白话版", "--target-reader", "现代普通读者")
@@ -239,26 +369,50 @@ def main() -> int:
         }]
         candidate_path = workspace / "90-audit/uncertainty-candidates.jsonl"
         decision_path = workspace / "90-audit/uncertainty-adjudication.jsonl"
+        fixture_closure(workspace, decisions[0])
         write_jsonl(candidate_path, candidates)
         write_jsonl(decision_path, decisions)
         run(str(PROJECT_OPEN), str(workspace))
         run(str(PROJECT_OPEN), str(workspace), "--check")
 
         publication = workspace / "60-publication"
-        reader_markdown = "# 本书介绍\n\n这是一个单页测试读本。\n\n# 本书术语表\n\n- **天地**：天空与大地。\n"
+        reader_aids(workspace)
+        reader_markdown = rendered_reader(workspace)
         (workspace / "50-edited/modern-reading.md").write_text(reader_markdown, encoding="utf-8")
         (publication / "modern-reading.md").write_text(reader_markdown, encoding="utf-8")
-        candidate_pdf = temp / "candidate.pdf"
-        make_pdf(candidate_pdf)
-        run(str(INSTALL_PDF), str(workspace), str(candidate_pdf), "--expected-pages", "1")
+        (workspace / '60-publication/candidates').mkdir()
+        candidate_pdf = workspace / "60-publication/candidates/candidate.pdf"
+        release_fixture(workspace, candidate_pdf)
         (workspace / "90-audit/quality-report.md").write_text("# Quality report\n", encoding="utf-8")
         counts = {"review_cycles": 1, "candidates": 1, "adjudications": 1, "active_adjudications": 1, "open_material": 0}
         quality_report(workspace, "A", counts)
         reader_aids(workspace)
         reader_revision(workspace)
         editorial_report(workspace)
+        fixture_final_uncertainty(workspace, decisions)
+        fixture_pilot(workspace)
+        write_json(workspace / '50-edited/delivery-contract.json', {
+            'schema_version': '1.1', 'rendering_profile': 'compact_final_reader',
+            'target_reader': 'Test reader', 'reading_goal': 'Understand the fixture', 'scope': 'One test block',
+            'limitations': 'Synthetic test, not a real edition',
+            'outcomes': [{'id': 'O1', 'question': 'What does this passage say?', 'answer': 'It names heaven and earth.',
+                          'section_heading': '正文', 'quote': '天地玄黄', 'status': 'passed', 'review_evidence': 'Synthetic fixture.'}]})
+        run(str(HERE / 'prepare_delivery_review.py'), str(workspace))
+        fidelity_path = workspace / '90-audit/fidelity-review.json'
+        fidelity = json.loads(fidelity_path.read_text(encoding='utf-8'))
+        fidelity.update(producer='fixture-translator', reviewer='fixture-fidelity-reviewer')
+        fidelity['blocks'][0].update(status='passed', evidence='Synthetic fixture only.', source_quote='天地玄黄',
+                                    modern_quote='天是玄色的，地是黄色的。', reader_anchor='<!-- source:P000001-B001 -->',
+                                    checks={key: 'Synthetic fixture, no claim of real semantic review.' for key in fidelity['blocks'][0]['checks']})
+        write_json(fidelity_path, fidelity)
+        run(str(INSTALL_PDF), str(workspace), str(candidate_pdf), "--expected-pages", "1")
         run(str(HERE / "validate_workspace.py"), str(workspace), "--stage", "publication")
         run(str(PUBLISH_AUDIT), str(workspace))
+
+        from regression_cases import run_regressions
+        run_regressions(workspace)
+        from uncertainty_cases import run as run_uncertainty_cases
+        run_uncertainty_cases(workspace)
 
         # An ordinary-reader release cannot pass with packaging alone.
         (workspace / "50-edited/editorial-report.json").unlink()
@@ -324,7 +478,9 @@ def main() -> int:
             "rationale": "Independent evidence confirms the glyph.", "evidence": [], "before": None, "after": None,
             "reviewed_at": "2026-01-01T00:00:02Z", "reviewer": "self-test",
         })
+        fixture_closure(workspace, decisions[-1])
         write_jsonl(decision_path, decisions)
+        fixture_final_uncertainty(workspace, decisions)
         run(str(PROJECT_OPEN), str(workspace))
         quality_report(workspace, "A", {"review_cycles": 3, "candidates": 2, "adjudications": 3, "active_adjudications": 2, "open_material": 0})
         editorial_report(workspace)

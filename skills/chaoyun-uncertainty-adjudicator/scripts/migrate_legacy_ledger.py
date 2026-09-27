@@ -87,7 +87,9 @@ def main() -> int:
                     "review_cycle": "RC-LEGACY-0001", "checkpoint": "legacy_migration",
                     "created_by": "legacy-migration",
                 })
-            status = row.get("status")
+            # Archive preserves the old claim. Migration must never manufacture evidence for it.
+            old_status = row.get("status")
+            status = 'open_material'
             decision_id = stable_id("UA", {"legacy_id": row.get("adjudication_id"), "candidate_id": candidate_id, "row": row})
             decisions.append({
                 "schema_version": "1.2", "adjudication_id": decision_id,
@@ -95,7 +97,8 @@ def main() -> int:
                 "reader_impact": impact(original.get("severity")) if status == "open_material" else "none",
                 "issue_id": "UI-" + candidate_id if status == "open_material" else None,
                 "page_id": original.get("page_id"), "block_id": original.get("block_id"),
-                "rationale": row.get("rationale") or "Migrated legacy adjudication.",
+                "rationale": (row.get("rationale") or "Migrated legacy adjudication.") + (" Legacy closure requires fresh evidence and review." if old_status != 'open_material' else ''),
+                "legacy_status": old_status,
                 "evidence": [original["source_image"]] if original.get("source_image") else [],
                 "before": None, "after": None, "active": True, "supersedes": None,
                 "review_cycle": "RC-LEGACY-0001", "checkpoint": "legacy_migration",
@@ -106,7 +109,7 @@ def main() -> int:
     write_jsonl(candidate_path, candidates)
     write_jsonl(decision_path, decisions)
     legacy_open.write_text("", encoding="utf-8")
-    result = {"backup": str(backup), "candidates": len(candidates), "adjudications": len(decisions), "needs_review": len(candidates) - len(decisions)}
+    result = {"backup": str(backup), "candidates": len(candidates), "adjudications": len(decisions), "needs_review": len(candidates) - len(decisions) + sum(row.get('legacy_status') != 'open_material' for row in decisions)}
     print(json.dumps(result, ensure_ascii=False, indent=2))
     return 0
 

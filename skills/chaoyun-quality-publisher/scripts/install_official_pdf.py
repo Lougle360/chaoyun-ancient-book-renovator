@@ -9,6 +9,8 @@ import json
 import os
 import shutil
 import tempfile
+import subprocess
+import sys
 from pathlib import Path
 
 
@@ -51,6 +53,21 @@ def main() -> int:
     except ValueError as exc:
         raise SystemExit("release_filename escapes workspace") from exc
     pages = inspect_pdf(candidate, args.expected_pages)
+    if not candidate.is_relative_to(root) or candidate == target:
+        raise SystemExit("candidate must be a separate file inside the workspace")
+    candidate_hash = sha256(candidate)
+    report = json.loads((root / '90-audit/quality-report.json').read_text(encoding='utf-8'))
+    if report.get('grade') not in {'A', 'B'}:
+        raise SystemExit('only an accepted A/B edition may replace the official release')
+    scripts = Path(__file__).resolve().parent
+    workspace_gate = scripts.parents[1] / "chaoyun-ancient-book-renovator/scripts/validate_workspace.py"
+    for script in (workspace_gate, scripts / "audit_publication.py"):
+        result = subprocess.run([sys.executable, "-X", "utf8", str(script), str(root), "--candidate-pdf", str(candidate)],
+                                capture_output=True, text=True, encoding="utf-8", errors="replace")
+        if result.returncode:
+            raise SystemExit(f"candidate gate failed; official release unchanged:\n{result.stdout}\n{result.stderr}")
+    if sha256(candidate) != candidate_hash:
+        raise SystemExit("candidate changed during audit; official release unchanged")
     target.parent.mkdir(parents=True, exist_ok=True)
     if target.exists():
         try:
@@ -58,6 +75,12 @@ def main() -> int:
                 pass
         except PermissionError as exc:
             raise SystemExit(f"official PDF is locked or not writable: {target}") from exc
+        backup = root / "90-audit/release-history" / sha256(target) / target.name
+        backup.parent.mkdir(parents=True, exist_ok=True)
+        if not backup.exists():
+            shutil.copy2(target, backup)
+        if sha256(backup) != sha256(target):
+            raise SystemExit("previous release backup failed; official release unchanged")
     handle = tempfile.NamedTemporaryFile("wb", delete=False, dir=target.parent, prefix=target.name + ".", suffix=".tmp.pdf")
     temporary = Path(handle.name)
     try:
@@ -66,6 +89,8 @@ def main() -> int:
             handle.flush()
             os.fsync(handle.fileno())
         inspect_pdf(temporary, pages)
+        if sha256(temporary) != candidate_hash:
+            raise SystemExit("candidate changed while copying; official release unchanged")
         try:
             os.replace(temporary, target)
         except PermissionError as exc:

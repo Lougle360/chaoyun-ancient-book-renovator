@@ -61,7 +61,7 @@ Create `50-edited/reader-aids.json`. The summary counts in `editorial-report.jso
 
 ## Introduction acceptance
 
-All nine introduction sections are required. They may be combined in the rendered prose, but each must have substantive book-specific content in the structured record. Generic praise, a list of headings, or a production disclaimer does not satisfy the section.
+Write the introduction as coherent prose from whole-book understanding and the editorial plan before populating the nine coverage keys. All keys point to actual final passages within the introduction; a passage may answer several questions. They do not prescribe nine paragraphs or nine sentences. Render the referenced prose verbatim and update JSON/manuscript together. The validator checks placement, not understanding. Generic praise, headings repeated as a list, or a production disclaimer do not explain a book.
 
 Source-derived claims use block or physical-page evidence. External historical background, when included, names its editorial source. When evidence is unavailable, say so in `limitations_and_cautions`; do not fill the gap with a confident generalization.
 
@@ -70,11 +70,17 @@ The introduction must let the target reader answer: What is this book? What does
 ## Glossary acceptance
 
 - Build an inventory from the actual book. Every term in `40-modernized/terminology.json` is either an entry or an explicitly excluded item with a reason.
+- The inventory file is mandatory. Core/supporting classification and exclusions need semantic review; never demote a core concept to avoid explaining it.
+- Render each term under its own unique subheading within the glossary. Render the exact plain/contextual definitions and, for core terms, example, confusion guidance and related concepts in that entry. A mention elsewhere in the book cannot satisfy this check.
 - Every entry has an exact source occurrence linked to an existing block. A summary count is not evidence.
 - `plain_definition` explains the term without merely repeating it or replacing it with another unexplained specialist term.
 - `contextual_definition` explains how this book uses the term; a generic dictionary definition is insufficient.
+- An example walks through a real source passage or explicitly labeled editorial illustration and explains what the concept does there. A quotation plus “按本书语境理解” is not an example. Confusion guidance identifies a particular misunderstanding and resolves it. Related terms require an actual conceptual relationship; never mass-fill the same list.
+- Start from concept dependencies in the understanding brief and actual reader obstacles. Explain prerequisites before using them in definitions. Do not demote essential concepts to supporting terms to avoid explaining them. Retain raw source wording in evidence; reader examples need comprehensible explanations rather than unexamined OCR fragments.
 - Core terms additionally require a usage example, related terms, and a likely confusion. Supporting terms may omit these only when the plain and contextual definitions are independently sufficient. Opaque terms use `tier: opaque`, state the uncertainty, and must not receive an invented definition.
 - A single-character match, contents-page mention, or substring collision is not automatically the first substantive occurrence. Verify it against the linked block.
 - In the rendered book, explain a term at first reader-facing use as well as in the end glossary.
 
 After this file validates, `$chaoyun-reader-experience-reviser` performs the independent whole-book reading pass, glossary sampling, revision loop, and final reader acceptance. Production evidence and acceptance evidence remain separate.
+
+Passing these mechanical checks proves text placement and source references, not clarity or accuracy. In the final reader pass, ask a reader to explain each core concept in their own words and distinguish it from a neighboring concept. Record the answer and the remaining misunderstanding, not just a boolean. Do not invent a source example where only an explicitly labeled editorial illustration is available.

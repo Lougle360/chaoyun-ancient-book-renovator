@@ -7,7 +7,13 @@ import argparse
 import importlib.util
 import json
 import re
+import hashlib
+import sys
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from validate_delivery import validate as validate_delivery
+from validate_production_plan import validate as validate_production_plan
 
 
 STAGE_FILES = {
@@ -28,9 +34,7 @@ READER_IMPACTS = {"none", "low", "medium", "high"}
 
 
 def requires_editorial_report(book: dict) -> bool:
-    target = str(book.get("target_reader") or "")
-    label = str(book.get("edition_label") or "")
-    return "普通" in target or "ordinary" in target.lower() or "现代白话" in label
+    return book.get("delivery_mode") not in {"source_comparison", "evidence_archive"}
 
 
 def validate_editorial_report(root: Path, high_open: int, errors: list[str]) -> None:
@@ -136,11 +140,17 @@ def validate_editorial_report(root: Path, high_open: int, errors: list[str]) -> 
             errors.append(f"editorial-report reader_value.{key} does not match reader-aids.json")
 
     figures = report.get("figures") if isinstance(report.get("figures"), dict) else {}
-    figure_counts = [figures.get(key) for key in (
-        "content_figures_total", "content_figures_rendered", "content_figures_guided"
-    )]
-    if any(not isinstance(value, int) or value < 0 for value in figure_counts) or len(set(figure_counts)) != 1:
-        errors.append("editorial-report content figures must all be rendered and specifically guided")
+    total = figures.get("content_figures_total")
+    rendered = figures.get("content_figures_rendered")
+    guided = figures.get("content_figures_guided")
+    reference_only = figures.get("reference_only", 0)
+    reference_ids = figures.get("reference_only_block_ids") or []
+    if any(not isinstance(value, int) or value < 0 for value in (total, rendered, guided, reference_only)):
+        errors.append("editorial-report figure counts must be non-negative integers")
+    elif rendered != total or guided + reference_only != total:
+        errors.append("editorial-report figures must be rendered and classified as guided or reference-only")
+    if not isinstance(reference_ids, list) or len(reference_ids) != reference_only or len(set(reference_ids)) != len(reference_ids):
+        errors.append("editorial-report reference-only figure IDs must match the declared count")
 
     semantic = report.get("semantic_review") if isinstance(report.get("semantic_review"), dict) else {}
     if semantic.get("high_impact_open") != high_open:
@@ -175,7 +185,7 @@ def read_jsonl(path: Path) -> list[dict]:
     return records
 
 
-def validate_uncertainties(root: Path, errors: list[str]) -> dict[str, int]:
+def validate_uncertainties(root: Path, errors: list[str], require_release: bool = True) -> dict[str, int]:
     audit = root / "90-audit"
     candidate_path = audit / "uncertainty-candidates.jsonl"
     decision_path = audit / "uncertainty-adjudication.jsonl"
@@ -201,7 +211,7 @@ def validate_uncertainties(root: Path, errors: list[str]) -> dict[str, int]:
         return {}
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
-    errors.extend(module.validate(root, candidates, decisions))
+    errors.extend(module.validate(root, candidates, decisions, require_release=require_release))
     expected = module.projection(decisions)
     comparable_open_items = [{key: value for key, value in row.items() if key != "_line"} for row in open_items]
     if comparable_open_items != expected:
@@ -217,6 +227,7 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("workspace", type=Path)
     parser.add_argument("--stage", choices=["source", "normalized", "modernized", "edited", "publication"], default="publication")
+    parser.add_argument("--candidate-pdf", type=Path, help="Audit a staged candidate without requiring an installed release")
     args = parser.parse_args()
     root = args.workspace.expanduser().resolve()
     errors: list[str] = []
@@ -230,10 +241,28 @@ def main() -> int:
         return 1
 
     book_id = book.get("book_id")
+    if book.get("delivery_mode") not in {"ordinary_reader", "source_comparison", "evidence_archive"}:
+        errors.append("book.json requires explicit delivery_mode; legacy metadata must be reviewed")
+    try:
+        from pypdf import PdfReader
+        manifest = read_json(root / "00-intake/source-manifest.json")
+        original = Path(manifest.get("staged_source") or manifest["source_path"])
+        if hashlib.sha256(original.read_bytes()).hexdigest() != manifest.get("source_sha256"):
+            errors.append("source PDF hash differs from intake")
+        physical_pages = len(PdfReader(str(original)).pages)
+        if type(book.get("source_pdf_pages")) is not int or book["source_pdf_pages"] != physical_pages:
+            errors.append("source_pdf_pages differs from physical PDF page count")
+    except (OSError, ValueError, KeyError, TypeError, ImportError) as exc:
+        errors.append(f"cannot verify intake source PDF: {exc}")
     if state.get("book_id") != book_id:
         errors.append("book_id differs between book.json and run-state.json")
 
     target_index = len(ORDER) - 1 if args.stage == "publication" else ORDER.index(args.stage)
+    if requires_editorial_report(book) and args.stage in {"modernized", "edited", "publication"}:
+        errors.extend(validate_production_plan(root))
+        for stage in ("book_understood", "reader_designed", "sample_accepted"):
+            if ((state.get("stages") or {}).get(stage) or {}).get("status") not in {"passed", "passed_with_ledger"}:
+                errors.append(f"reader production prerequisite {stage} is not accepted")
     source_ids: set[str] | None = None
     source_pages_seen: set[int] = set()
     counts: dict[str, int] = {}
@@ -248,8 +277,20 @@ def main() -> int:
             errors.append(str(exc))
             continue
         counts[stage] = len(records)
+        if not records:
+            errors.append(f"{stage} records must not be empty")
         ids: set[str] = set()
         for record in records:
+            disposition = record.get("disposition")
+            if disposition not in {"translated", "retained", "noncontent", "unreadable", "excluded_with_reason"}:
+                errors.append(f"{stage}:{record['_line']} invalid disposition")
+            if disposition in {"unreadable", "excluded_with_reason", "noncontent"}:
+                if not record.get("notes"):
+                    errors.append(f"{stage}:{record['_line']} disposition requires evidence/reason in notes")
+            else:
+                field = {"source": "source_text", "normalized": "normalized_text", "modernized": "modern_text", "edited": "modern_text"}[stage]
+                if not isinstance(record.get(field), str) or not record[field].strip():
+                    errors.append(f"{stage}:{record['_line']} requires nonempty {field}")
             missing = sorted(REQUIRED - record.keys())
             if missing:
                 errors.append(f"{stage}:{record['_line']} missing {','.join(missing)}")
@@ -279,8 +320,10 @@ def main() -> int:
             extra_ids = sorted(ids - source_ids)[:10]
             errors.append(f"{stage} block identity mismatch; missing={missing_ids}, extra={extra_ids}")
 
-    expected_pages = book.get("source_pages")
-    if isinstance(expected_pages, int) and expected_pages > 0 and source_pages_seen:
+    expected_pages = book.get("source_pdf_pages")
+    if type(expected_pages) is not int or expected_pages <= 0:
+        errors.append("source_pdf_pages must be a positive integer")
+    else:
         expected = set(range(1, expected_pages + 1))
         if source_pages_seen != expected:
             errors.append(
@@ -291,7 +334,7 @@ def main() -> int:
 
     uncertainty_counts: dict[str, int] = {}
     if args.stage == "publication":
-        uncertainty_counts = validate_uncertainties(root, errors)
+        uncertainty_counts = validate_uncertainties(root, errors, require_release=requires_editorial_report(book))
         declared_pdf = book.get("release_filename")
         if not declared_pdf:
             try:
@@ -302,6 +345,11 @@ def main() -> int:
             except (OSError, ValueError, json.JSONDecodeError):
                 pass
         declared_pdf = declared_pdf or "60-publication/modern-reading.pdf"
+        if args.candidate_pdf:
+            candidate = args.candidate_pdf.resolve()
+            if not candidate.is_relative_to(root):
+                errors.append("candidate PDF escapes workspace")
+            declared_pdf = str(candidate)
         required_outputs = [
             "60-publication/modern-reading.md",
             str(declared_pdf),
@@ -345,6 +393,7 @@ def main() -> int:
             errors.append("grade B cannot contain high-impact open_material uncertainty")
         if requires_editorial_report(book):
             validate_editorial_report(root, uncertainty_counts.get("high_open", 0), errors)
+            errors.extend(validate_delivery(root))
 
     result = {"valid": not errors, "stage": args.stage, "counts": counts,
               "uncertainties": uncertainty_counts, "warnings": warnings, "errors": errors}
