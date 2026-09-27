@@ -290,6 +290,42 @@ def validate_policy_lock(root: Path, errors: list[str]) -> None:
             errors.append(f"acceptance policy changed after review began: {name}")
 
 
+def validate_source(root: Path) -> list[str]:
+    """Run the workflow-1.9 structure/scope gate as soon as source reconstruction ends."""
+    errors: list[str] = []
+    try:
+        book = read_json(root / "book.json")
+    except (OSError, ValueError, json.JSONDecodeError) as exc:
+        return [f"cannot validate workflow 1.9 source integrity: {exc}"]
+    if book.get("delivery_mode") != "ordinary_reader" or str(book.get("workflow_schema_version") or "") != "1.9":
+        return errors
+    try:
+        source = read_jsonl(root / "20-source/blocks.jsonl")
+    except (OSError, ValueError, json.JSONDecodeError) as exc:
+        return [f"cannot validate workflow 1.9 source blocks: {exc}"]
+    validate_source_structure(source, errors)
+    scope_path = root / "10-diagnosis/edition-scope.json"
+    if not scope_path.is_file():
+        errors.append("workflow 1.9 source gate requires a frozen 10-diagnosis/edition-scope.json")
+        return errors
+    try:
+        scope = read_json(scope_path)
+    except (OSError, ValueError, json.JSONDecodeError) as exc:
+        errors.append(f"invalid edition-scope.json: {exc}")
+        return errors
+    if scope.get("status") != "locked":
+        errors.append("edition scope must be locked before source reconstruction can pass")
+    components = scope.get("source_components") if isinstance(scope.get("source_components"), list) else []
+    component_ids = {item.get("component_id") for item in components if isinstance(item, dict)}
+    invalid_components = [row.get("block_id") for row in source if row.get("component_id") not in component_ids]
+    if invalid_components:
+        errors.append(
+            "source blocks lack a component declared by edition scope: "
+            f"count={len(invalid_components)}, examples={invalid_components[:10]}"
+        )
+    return errors
+
+
 def validate(root: Path) -> list[str]:
     errors: list[str] = []
     try:

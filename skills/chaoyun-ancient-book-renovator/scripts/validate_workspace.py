@@ -13,7 +13,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from validate_delivery import validate as validate_delivery
-from validate_integrity import validate as validate_integrity
+from validate_integrity import validate as validate_integrity, validate_source as validate_source_integrity
 from validate_production_plan import validate as validate_production_plan
 
 
@@ -334,6 +334,8 @@ def main() -> int:
             )
 
     uncertainty_counts: dict[str, int] = {}
+    if args.stage != "publication":
+        errors.extend(validate_source_integrity(root))
     if args.stage == "publication":
         errors.extend(validate_integrity(root))
         uncertainty_counts = validate_uncertainties(root, errors, require_release=requires_editorial_report(book))

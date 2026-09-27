@@ -8,7 +8,7 @@ import json
 import tempfile
 from pathlib import Path
 
-from validate_integrity import validate
+from validate_integrity import validate, validate_source
 
 
 def write_json(path: Path, value: object) -> None:
@@ -81,6 +81,8 @@ def main() -> int:
         baseline = validate(root)
         if baseline != ["workflow 1.9 requires a frozen acceptance-policy-lock.json"]:
             raise AssertionError(f"unexpected baseline failures: {baseline!r}")
+        if validate_source(root):
+            raise AssertionError(f"valid structured source fixture failed source gate: {validate_source(root)!r}")
 
         scope = root / "10-diagnosis/edition-scope.json"
         saved_scope = scope.read_bytes()
@@ -95,6 +97,8 @@ def main() -> int:
         other = json.loads(source_path.read_text(encoding="utf-8").splitlines()[1])
         write_jsonl(source_path, [source, other])
         assert_rejects(root, "lacks structural fields")
+        if not any("lacks structural fields" in error for error in validate_source(root)):
+            raise AssertionError("source-stage gate did not reject missing structural fields")
         fixture(root)
 
         manuscript = root / "50-edited/modern-reading.md"
