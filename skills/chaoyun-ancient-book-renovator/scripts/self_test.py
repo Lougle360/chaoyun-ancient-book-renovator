@@ -68,6 +68,100 @@ def quality_report(workspace: Path, grade: str, counts: dict[str, int]) -> None:
     )
 
 
+def editorial_report(workspace: Path, high_open: int = 0) -> None:
+    write_json(
+        workspace / "50-edited/editorial-report.json",
+        {
+            "schema_version": "1.0",
+            "book_nature": {
+                "summary": "A compact classical fixture used to test a modern reading edition.",
+                "attribution_basis": "The fixture makes no authorship claim beyond its recorded source.",
+                "compilation_status": "single_work",
+            },
+            "source_toc": {
+                "status": "source_absent_with_reason", "source_pages": [], "entry_count": 0,
+                "physical_page_mapping_verified": True,
+                "reason": "The one-page fixture has no printed contents.",
+            },
+            "reader_structure": {"entry_count": 1, "editor_additions_labeled": True},
+            "glossary": {
+                "status": "completed", "entry_count": 1,
+                "entries_with_first_occurrence": 1, "reason": None,
+                "core_entry_count": 1, "reader_review_sampled": 1,
+            },
+            "reader_value": {
+                "introduction_sections": 9, "required_questions_passed": 7,
+                "producer": "fixture-editor", "reviewer": "fixture-reader-reviewer",
+                "status": "passed",
+            },
+            "figures": {
+                "content_figures_total": 0, "content_figures_rendered": 0,
+                "content_figures_guided": 0,
+            },
+            "semantic_review": {
+                "status": "blocked_by_high_impact_open_items" if high_open else "passed",
+                "high_impact_open": high_open,
+            },
+            "pipeline_language_scan": {"forbidden_matches": 0},
+        },
+    )
+
+
+def reader_aids(workspace: Path) -> None:
+    sections = {
+        "what_this_book_is": "A one-page classical fixture.",
+        "who_should_read": "Readers testing an ordinary-reader edition.",
+        "reader_value": "It demonstrates traceable explanation.",
+        "contents_and_structure": "One source block followed by its explanation.",
+        "distinctive_features": "A deliberately compact evidence fixture.",
+        "historical_and_textual_context": "No authorship claim is made beyond the recorded source.",
+        "how_to_read": "Read the source concept, then its modern explanation.",
+        "limitations_and_cautions": "It is a test fixture, not a historical edition.",
+        "edition_method": "The source is retained and a labeled modern explanation is added.",
+    }
+    questions = [
+        {"id": "what_is_book", "answerable": True, "answer_summary": "A one-page classical fixture.", "evidence_section": "what_this_book_is"},
+        {"id": "who_for", "answerable": True, "answer_summary": "A modern ordinary reader.", "evidence_section": "who_should_read"},
+        {"id": "contents_structure", "answerable": True, "answer_summary": "One source block and one explanation.", "evidence_section": "contents_and_structure"},
+        {"id": "reader_value", "answerable": True, "answer_summary": "It demonstrates traceable explanation.", "evidence_section": "reader_value"},
+        {"id": "how_to_read", "answerable": True, "answer_summary": "Read source, then explanation.", "evidence_section": "how_to_read"},
+        {"id": "limitations", "answerable": True, "answer_summary": "It is only a fixture.", "evidence_section": "limitations_and_cautions"},
+        {"id": "edition_changes", "answerable": True, "answer_summary": "It adds a labeled modern explanation.", "evidence_section": "edition_method"},
+    ]
+    write_json(
+        workspace / "50-edited/reader-aids.json",
+        {
+            "schema_version": "1.0", "target_reader": "modern ordinary reader",
+            "introduction": {
+                "markdown_heading": "本书介绍", "sections": sections,
+                "evidence": [{"claim": "The fixture contains one classical block.",
+                              "block_ids": ["P000001-B001"], "source_pages": [1], "editorial_sources": []}],
+            },
+            "glossary": {
+                "markdown_heading": "本书术语表",
+                "entries": [{
+                    "term": "天地", "tier": "core", "aliases": [],
+                    "plain_definition": "The sky and the earth considered together.",
+                    "contextual_definition": "This fixture uses the pair to open its account of the world.",
+                    "first_occurrence": {"page_id": "P000001", "block_id": "P000001-B001",
+                                         "source_page": 1, "quote": "天地玄黄"},
+                    "usage_example": "Read 天地 as the paired frame of the sentence.",
+                    "related_terms": ["玄黄"], "common_confusions": "It is a pair, not one place name.",
+                    "confidence": "confirmed",
+                }],
+                "excluded_inventory_terms": [],
+            },
+            "reader_review": {
+                "producer": "fixture-editor", "reviewer": "fixture-reader-reviewer", "status": "passed",
+                "questions": questions,
+                "glossary_samples": [{"term": "天地", "plain_enough": True, "context_specific": True,
+                                      "example_helpful": True, "issue": None}],
+                "blocking_issues": [],
+            },
+        },
+    )
+
+
 def main() -> int:
     with tempfile.TemporaryDirectory(prefix="chaoyun-skill-test-") as temporary:
         temp = Path(temporary)
@@ -95,6 +189,7 @@ def main() -> int:
         }
         for relative in ("20-source/blocks.jsonl", "30-normalized/blocks.jsonl", "40-modernized/blocks.jsonl", "50-edited/blocks.jsonl"):
             write_jsonl(workspace / relative, [record])
+        write_json(workspace / "40-modernized/terminology.json", {"terms": [{"term": "天地"}]})
 
         candidates = [{
             "schema_version": "1.1", "candidate_id": "UC000001", "page_id": "P000001",
@@ -116,15 +211,39 @@ def main() -> int:
         run(str(PROJECT_OPEN), str(workspace), "--check")
 
         publication = workspace / "60-publication"
-        (publication / "modern-reading.md").write_text("# 测试\n\n天是玄色的。\n", encoding="utf-8")
+        reader_markdown = "# 本书介绍\n\n这是一个单页测试读本。\n\n# 本书术语表\n\n- **天地**：天空与大地。\n"
+        (workspace / "50-edited/modern-reading.md").write_text(reader_markdown, encoding="utf-8")
+        (publication / "modern-reading.md").write_text(reader_markdown, encoding="utf-8")
         candidate_pdf = temp / "candidate.pdf"
         make_pdf(candidate_pdf)
         run(str(INSTALL_PDF), str(workspace), str(candidate_pdf), "--expected-pages", "1")
         (workspace / "90-audit/quality-report.md").write_text("# Quality report\n", encoding="utf-8")
         counts = {"candidates": 1, "adjudications": 1, "active_adjudications": 1, "open_material": 0}
         quality_report(workspace, "A", counts)
+        reader_aids(workspace)
+        editorial_report(workspace)
         run(str(HERE / "validate_workspace.py"), str(workspace), "--stage", "publication")
         run(str(PUBLISH_AUDIT), str(workspace))
+
+        # An ordinary-reader release cannot pass with packaging alone.
+        (workspace / "50-edited/editorial-report.json").unlink()
+        missing_editorial = run(str(HERE / "validate_workspace.py"), str(workspace), "--stage", "publication", expect=1)
+        if "requires 50-edited/editorial-report.json" not in missing_editorial.stdout:
+            raise AssertionError("workspace validator did not require editorial evidence")
+        missing_editorial_audit = run(str(PUBLISH_AUDIT), str(workspace), expect=1)
+        if "requires 50-edited/editorial-report.json" not in missing_editorial_audit.stdout:
+            raise AssertionError("publication audit did not require editorial evidence")
+        editorial_report(workspace)
+
+        # Reader value must be proved item by item, not by self-reported totals.
+        aids_path = workspace / "50-edited/reader-aids.json"
+        aids = json.loads(aids_path.read_text(encoding="utf-8"))
+        aids["glossary"]["entries"][0]["usage_example"] = ""
+        write_json(aids_path, aids)
+        weak_reader_value = run(str(HERE / "validate_workspace.py"), str(workspace), "--stage", "publication", expect=1)
+        if "requires a usage example" not in weak_reader_value.stdout:
+            raise AssertionError("workspace validator accepted a shallow core glossary entry")
+        reader_aids(workspace)
 
         # A high-impact open item must make Grade B fail in both gates.
         candidates.append({
@@ -143,6 +262,7 @@ def main() -> int:
         write_jsonl(decision_path, decisions)
         run(str(PROJECT_OPEN), str(workspace))
         quality_report(workspace, "B", {"candidates": 2, "adjudications": 2, "active_adjudications": 2, "open_material": 1})
+        editorial_report(workspace, high_open=1)
         grade_failure = run(str(HERE / "validate_workspace.py"), str(workspace), "--stage", "publication", expect=1)
         if "grade B cannot contain high-impact" not in grade_failure.stdout:
             raise AssertionError("workspace validator did not enforce Grade B uncertainty risk")
@@ -162,6 +282,7 @@ def main() -> int:
         write_jsonl(decision_path, decisions)
         run(str(PROJECT_OPEN), str(workspace))
         quality_report(workspace, "A", {"candidates": 2, "adjudications": 3, "active_adjudications": 2, "open_material": 0})
+        editorial_report(workspace)
         run(str(HERE / "validate_workspace.py"), str(workspace), "--stage", "publication")
         run(str(PUBLISH_AUDIT), str(workspace))
 
@@ -200,6 +321,23 @@ def main() -> int:
             raise AssertionError("legacy migration did not preserve the adjudicated candidate")
         run(str(PROJECT_OPEN), str(legacy))
         run(str(PROJECT_OPEN), str(legacy), "--check")
+        before_retry = {
+            path.name: path.read_bytes()
+            for path in (
+                legacy / "90-audit/uncertainty-candidates.jsonl",
+                legacy / "90-audit/uncertainty-adjudication.jsonl",
+            )
+        }
+        run(str(MIGRATE), str(legacy), expect=1)
+        after_retry = {
+            path.name: path.read_bytes()
+            for path in (
+                legacy / "90-audit/uncertainty-candidates.jsonl",
+                legacy / "90-audit/uncertainty-adjudication.jsonl",
+            )
+        }
+        if before_retry != after_retry:
+            raise AssertionError("a refused migration retry changed accepted ledgers")
         if not any((legacy / "90-audit/legacy-uncertainty-migration").iterdir()):
             raise AssertionError("legacy migration did not create a backup")
 

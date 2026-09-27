@@ -25,13 +25,16 @@ book-workspace/
 |   `-- terminology.json
 |-- 50-edited/
 |   |-- modern-reading.md
-|   `-- blocks.jsonl
+|   |-- blocks.jsonl
+|   |-- reader-aids.json
+|   `-- editorial-report.json
 |-- 60-publication/
 |   |-- modern-reading.md
 |   |-- <book-title>·<edition-label>.pdf
 |   |-- modern-reading.pdf (optional internal alias)
-|   |-- source-comparison.md
-|   `-- source-comparison.pdf
+|   `-- supplements/
+|       |-- source-comparison.md
+|       `-- source-comparison.pdf
 `-- 90-audit/
     |-- events.jsonl
     |-- uncertainty-candidates.jsonl
@@ -41,6 +44,8 @@ book-workspace/
 ```
 
 Files appear only when their stage runs. Do not create fake empty outputs to satisfy the layout.
+
+For an ordinary-reader edition, `50-edited/reader-aids.json` and `50-edited/editorial-report.json` are required before publication. The reader-aids file is the item-level evidence source; the editorial report is a derived summary and may not self-certify counts. Its schema and evidence rules are defined in [editorial-evidence-contract.md](editorial-evidence-contract.md). Supplemental PDFs stay below `60-publication/supplements/`; the publication root contains only the single declared official reader PDF and an optional exact internal alias.
 
 ## Edition and release metadata
 

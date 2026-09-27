@@ -13,7 +13,8 @@ Treat audit and rendering as separate gates. A beautiful PDF is not evidence of 
 2. Compare high-risk and statistically distributed samples against source page images and accepted translations. Expand review when systematic errors appear.
 3. Check names, dates, quantities, terminology, quotations, captions, tables, and Japanese/classical-language routes.
 4. Confirm editor-created content is labeled and does not masquerade as source text.
-5. Assign grade A–D with explicit evidence and limitations.
+5. For ordinary-reader editions, validate item-level `50-edited/reader-aids.json` against source blocks and the final publication Markdown, then audit the derived `50-edited/editorial-report.json`: book nature and attribution, introduction coverage, reader-question review, contextual glossary coverage, figure-specific guidance, pipeline-language scan, and high-impact uncertainty count. Never accept self-reported counts in place of entries and evidence.
+6. Assign grade A–D with explicit evidence and limitations.
 
 Hard publication failures include unresolved literal HTML/XML tags in rendered text, internal pipeline messages presented to readers, OCR garbage treated as prose, repeated sentinel page IDs, broken page-to-block links, low-confidence fragments accepted as high-confidence without image evidence, or incomplete page-level visual coverage claimed as a full scan conversion. Stop and return the edition to the responsible stage instead of decorating these defects with an uncertainty box.
 
@@ -22,7 +23,7 @@ Use [references/publication-package.md](references/publication-package.md) for o
 ## Publish
 
 - Produce `60-publication/modern-reading.md` and one official reader PDF named from `book.json.release_filename`, normally `<原书名>·<版本名>.pdf`. A `modern-reading.pdf` internal alias is optional and must not be presented as a second final edition.
-- Produce source-comparison Markdown/PDF when evidence supports it.
+- Produce source-comparison Markdown/PDF under `60-publication/supplements/` when evidence supports it; do not place a second final-looking PDF beside the official reader PDF.
 - Use relative asset paths in Markdown and embed suitable CJK fonts in PDF.
 - Include a formal cover, copyright/credits page, supplied author/editor/producer lines, and appropriate reader-use notes. For generated covers, intentionally choose either a full-image cover with verified Chinese typography or an image background with programmatically typeset text; inspect every cover character.
 - Verify clickable TOC targets, PDF bookmarks, heading levels, page breaks, figures, captions, tables, footnotes, links, selectable text, and rendered pages.

@@ -29,6 +29,8 @@
 - 正式 PDF 包含封面、版权页、作者与整理者、出品方、可点击目录和 PDF 书签；
 - 成品使用 `<原书名>·<版本名>.pdf`，只保留一个明确的正式交付文件。
 
+阅读编辑始终采用“增、删、改、整”：增加真正解除理解障碍的背景、例子和过渡；从连续阅读路径中删去重复与流程噪音但不删除原书证据；把古奥表达改成自然现代中文而不改变原意；按照读者问题整理章节、概念和术语，同时另行保存原书次序。介绍必须完整回答读者为何读、读什么、怎样读和有哪些限制；核心术语必须有通俗解释、本书语境、准确出处、例子、关联概念与易混点，并通过独立读者审读。
+
 ## Skill 结构
 
 ```text
@@ -146,6 +148,7 @@ book-workspace/
 ```powershell
 python .\skills\chaoyun-ancient-book-renovator\scripts\self_test.py
 python .\skills\chaoyun-ancient-book-renovator\scripts\validate_workspace.py <book-workspace> --stage publication
+python .\skills\chaoyun-reading-editor\scripts\validate_reader_value.py <book-workspace>
 python .\skills\chaoyun-uncertainty-adjudicator\scripts\project_open_items.py <book-workspace> --check
 python .\skills\chaoyun-quality-publisher\scripts\audit_publication.py <book-workspace>
 ```

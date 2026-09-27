@@ -16,6 +16,22 @@ Maintain two separate layers:
 
 Never replace the evidence layer with a translation or fluent rewrite. Every modernized content block must resolve to a stable source `block_id`. Do not invent missing text from context. Mark unrecoverable content explicitly.
 
+## Editorial truth before packaging
+
+For an ordinary-reader edition, introduction, table of contents, glossary, and figure guidance are semantic deliverables, not decorative front/back matter. Build them only after source reconstruction and modernization are stable.
+
+Organize the reading layer from the reader's point of view using `增、删、改、整`: add only what resolves a comprehension barrier, remove clutter from the continuous path without deleting source evidence, rewrite into natural modern Chinese without changing accepted meaning, and reorganize navigation while preserving source order separately.
+
+- The introduction must state what kind of surviving book this is, distinguish title attribution from demonstrated authorship, and disclose compilation or layering when the evidence shows it.
+- Reconstruct the source hierarchy from printed contents pages, running titles,卷次,篇名, and physical-page evidence. Never infer printed page numbers from PDF offsets without a verified mapping.
+- Preserve a source-faithful contents view separately from editor-created reading guidance. Label every editor-created introduction or regrouping.
+- Build the glossary from terms actually used in this book. Record the first source occurrence and give the contextual meaning; mark opaque terms instead of filling them with generic domain definitions.
+- Do not accept a one-line label as a sufficient explanation of a core term. Require plain meaning, book-specific use, an exact source occurrence, an example, related concepts, and likely beginner confusion.
+- Give each content-bearing figure a specific reading route. A repeated generic caption is not figure guidance.
+- Do not allow model verdicts, repair queues, candidate text, pipeline states, or internal validation language into the reader layer.
+
+For ordinary-reader work, write `50-edited/editorial-report.json` using [references/editorial-evidence-contract.md](references/editorial-evidence-contract.md). The report is auditable evidence for these decisions; it does not replace human semantic review.
+
 ## Define the edition before processing
 
 Choose and record one primary delivery mode before bulk work begins:
@@ -40,7 +56,7 @@ When the user asks for “普通人可以直接阅读” or equivalent, use the 
 5. Use `$chaoyun-uncertainty-adjudicator` to preserve raw candidates, merge duplicate reports, separate nonbody/structural issues from true source ambiguity, and create the first material open-item projection. Do not send an unreviewed model-warning list directly to readers.
 6. Use `$chaoyun-text-normalizer` for script conversion, variant-character policy, punctuation, and segmentation. This stage must not paraphrase.
 7. Use `$chaoyun-classical-modernizer` for classical Chinese-to-modern Chinese and Japanese-to-modern Chinese. Route mixed-language blocks separately.
-8. Use `$chaoyun-reading-editor` to build the declared reader edition, including its reading route, chapter guidance, first-use terminology, figure guidance, and glossary where appropriate, while keeping editor-created material explicitly labeled.
+8. Use `$chaoyun-reading-editor` to build the declared reader edition, including its evidence-based introduction, reading route, chapter guidance, first-use terminology, figure guidance, and tiered glossary, while keeping editor-created material explicitly labeled. Require `50-edited/reader-aids.json` and a distinct reader-review pass.
 9. Run `$chaoyun-uncertainty-adjudicator` again to include translation and editorial findings. The reader-facing ledger must contain only current `open_material` decisions, with reader impact and evidence.
 10. Use `$chaoyun-quality-publisher` for independent semantic checks, formal front matter, official release naming, package audit, and Markdown/PDF production. Detect whether the declared PDF path is open or locked before rendering; write a temporary artifact and atomically replace the official file only after validation. Never silently publish a differently named second “official” PDF.
 11. Run the deterministic contract validator:
@@ -59,6 +75,7 @@ For scan-heavy books, do not publish a full-book reading edition until every inc
 - A later stage may start only after the preceding gate is `passed` or explicitly `passed_with_ledger`.
 - Use append-only audit records and preserve stage outputs; do not rewrite earlier evidence in place.
 - Support resume from the last completed stage. A retry must not duplicate accepted records.
+- Migration and rebuild scripts must be idempotent. Read from an immutable source ledger, never from the projection they overwrite. Before accepting a migration, run it twice or verify that the second run refuses safely and leaves hashes/counts unchanged.
 - Before a paid full-book run, estimate pages/cost and obtain authorization. A representative sample is not authorization for the full corpus.
 - Keep samples and full-book artifacts in visibly different paths and filenames. A sample may validate routing and quality, but it is never proof that the complete book was converted. Never label a partial, C-grade, or validation-failing artifact as `完整版`, `final`, or publication-ready.
 - Keep uncertainty candidates, adjudications, and reader-facing open items distinct. A resolved stamp, variant character, cross-page continuation, semantic comment, or duplicate must remain traceable in history but must not inflate the published uncertainty count.
@@ -67,7 +84,7 @@ For scan-heavy books, do not publish a full-book reading edition until every inc
 ## Completion grades
 
 - **A — publication-ready:** all gates pass, all content blocks are accounted for, and no high-risk uncertainty remains.
-- **B — readable with ledger:** the edition is usable, with bounded uncertainties fully listed and linked to source evidence.
+- **B — readable with ledger:** the edition is usable, with bounded uncertainties fully listed and linked to source evidence, and no active high-impact item.
 - **C — assisted draft:** substantial uncertainties or layout/translation risks remain; do not present as publication-ready.
 - **D — unrecoverable:** source evidence is insufficient for a responsible conversion.
 

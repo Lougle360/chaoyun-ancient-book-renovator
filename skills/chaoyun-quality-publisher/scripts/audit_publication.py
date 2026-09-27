@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import importlib.util
 import json
 import re
 from pathlib import Path
@@ -15,6 +16,10 @@ INTERNAL_MESSAGES = (
     "本地硬校验仍未通过",
     "自动修复后核义模型仍建议修订",
     "已记录供后续自动处理",
+    "judge_verdict",
+    "candidate_modern_text",
+    "repair_queue",
+    "locked_terms",
 )
 
 
@@ -41,6 +46,36 @@ def main() -> int:
             book_data = json.loads(book_file.read_text(encoding="utf-8"))
         except (json.JSONDecodeError, OSError) as exc:
             errors.append(f"invalid book.json: {exc}")
+
+    target_reader = str(book_data.get("target_reader") or "")
+    edition_label = str(book_data.get("edition_label") or "")
+    ordinary_reader = "普通" in target_reader or "ordinary" in target_reader.lower() or "现代白话" in edition_label
+    editorial_path = root / "50-edited/editorial-report.json"
+    editorial_data: dict = {}
+    reader_counts: dict[str, int] = {}
+    if ordinary_reader:
+        if not editorial_path.is_file():
+            errors.append("ordinary-reader edition requires 50-edited/editorial-report.json")
+        else:
+            try:
+                editorial_data = json.loads(editorial_path.read_text(encoding="utf-8"))
+                if not isinstance(editorial_data, dict):
+                    errors.append("editorial-report.json must contain an object")
+                    editorial_data = {}
+            except (json.JSONDecodeError, OSError) as exc:
+                errors.append(f"invalid editorial-report.json: {exc}")
+        reader_validator = Path(__file__).resolve().parents[2] / "chaoyun-reading-editor" / "scripts" / "validate_reader_value.py"
+        if not reader_validator.is_file():
+            errors.append("missing chaoyun-reading-editor reader-value validator")
+        else:
+            spec = importlib.util.spec_from_file_location("chaoyun_reader_value_audit", reader_validator)
+            if spec is None or spec.loader is None:
+                errors.append("could not load reader-value validator")
+            else:
+                module = importlib.util.module_from_spec(spec)
+                spec.loader.exec_module(module)
+                reader_errors, reader_counts = module.validate(root, "60-publication/modern-reading.md")
+                errors.extend(reader_errors)
 
     publication = report_data.get("publication")
     publication = publication if isinstance(publication, dict) else {}
@@ -155,6 +190,25 @@ def main() -> int:
         if isinstance(uncertainty_summary, dict) and uncertainty_summary.get("open_material") != len(open_items):
             errors.append("quality-report uncertainty_summary.open_material mismatch")
         high_open = sum(1 for row in open_items if row.get("reader_impact") == "high")
+        if ordinary_reader and editorial_data:
+            glossary_report = editorial_data.get("glossary")
+            glossary_report = glossary_report if isinstance(glossary_report, dict) else {}
+            for report_key, count_key in (
+                ("entry_count", "glossary_entries"),
+                ("entries_with_first_occurrence", "glossary_with_first_occurrence"),
+                ("core_entry_count", "glossary_core"),
+                ("reader_review_sampled", "glossary_sampled"),
+            ):
+                if glossary_report.get(report_key) != reader_counts.get(count_key):
+                    errors.append(f"editorial-report glossary.{report_key} does not match reader-aids.json")
+            semantic_review = editorial_data.get("semantic_review")
+            semantic_review = semantic_review if isinstance(semantic_review, dict) else {}
+            if semantic_review.get("high_impact_open") != high_open:
+                errors.append("editorial-report semantic_review.high_impact_open mismatch")
+            pipeline_scan = editorial_data.get("pipeline_language_scan")
+            pipeline_scan = pipeline_scan if isinstance(pipeline_scan, dict) else {}
+            if pipeline_scan.get("forbidden_matches") != 0:
+                errors.append("editorial-report reader layer contains internal pipeline language")
         if data.get("grade") == "A" and open_items:
             errors.append("grade A cannot contain open_material uncertainty")
         if data.get("grade") == "B" and high_open:

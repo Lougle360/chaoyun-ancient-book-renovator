@@ -4,11 +4,15 @@ This edition is a newly edited reading experience grounded in the source, not a 
 
 ## Required reader experience
 
-- State in one plain sentence what the book is, who it is for, and how it should be used.
+- State in one plain sentence what the book is, who it is for, and how it should be used. The longer introduction must distinguish title attribution, demonstrated authorship, later compilation, and surviving-edition scope whenever they differ.
 - Place a reading map or “how to read this book” section before the main text when the original structure is difficult for modern readers.
+- Reconstruct an “original-book contents” view from printed contents pages and verified physical-page evidence. Keep it distinct from a reader-oriented route or editor-created regrouping.
 - Give each major chapter a short introduction that explains its question, key terms, and reading route.
-- Explain specialist terms at first occurrence and maintain a complete glossary at the end.
-- For diagrams, plates, maps, tables, or formula-like passages, explain what the reader should look at and in what order.
+- Explain specialist terms at first occurrence and maintain a complete glossary at the end. Each glossary entry records its first source occurrence and contextual meaning; unresolved names or opaque terms stay explicitly unresolved.
+- Apply `增、删、改、整` from the reader's point of view. Add context that removes a barrier, remove clutter from the main path without erasing source evidence, rewrite for clear modern comprehension, and organize the book around reader questions while preserving source order separately.
+- Make the introduction answer what the book is, who should read it, what value it offers, what its parts contain and how they relate, what is distinctive, where to begin, what remains limited or uncertain, and what the modern edition changed.
+- For core terms, add a plain definition, contextual definition, exact source occurrence, usage example, related terms, and likely confusion. Validate these fields from `reader-aids.json`; do not infer completion from a summary count.
+- For content-bearing diagrams, plates, maps, tables, or formula-like passages, explain what the reader should look at and in what order. Do not reuse one generic note as if it were figure-specific guidance.
 - Add practical checklists, observation guides, or examples only when they are supported by the source or clearly labeled as editorial aids.
 - Render classical Chinese, traditional Chinese, and Japanese into natural modern Chinese without adding unsupported facts or certainty.
 
@@ -28,3 +32,5 @@ Preserve traditional claims as part of the book. Attribute them with wording suc
 The official reader release contains a designed cover, formal copyright/credits page, producer credit when supplied, clickable table of contents, PDF bookmarks, readable body, glossary, and any declared appendices. Its filename follows `<原书名>·<版本名>.pdf`, for example `<原书名>·现代白话版.pdf`. Deliver one unambiguous official PDF; archive or clearly label superseded drafts.
 
 Inspect every rendered page for short and medium books. For very long books, inspect all anomaly pages plus stratified samples from every layout family and chapter, while still running deterministic checks over the full file.
+
+Before publication, complete `50-edited/editorial-report.json`. A polished cover, clickable contents, and valid PDF structure cannot compensate for a missing evidence-based introduction, reconstructed source hierarchy, contextual glossary, or semantic review.

@@ -50,6 +50,10 @@
 - For an ordinary-reader edition, the book includes a reading route, chapter guidance, first-use term explanations, figure-reading guidance, and a complete glossary where applicable.
 - Traditional causal or predictive claims are attributed as historical/source claims and remain distinct from directly observable descriptions.
 - OCR corruption, missing text, and uncertain reading order are returned to reconstruction rather than polished into fluent prose.
+- `editorial-report.json` records the evidence used for the book-nature statement, source contents reconstruction, contextual glossary, content-figure guidance, and semantic status.
+- `reader-aids.json` supplies the item-level evidence for the introduction and every glossary entry. Its validator passes, its counts match `editorial-report.json`, and a distinct reader reviewer answers every required reader question.
+- Printed page numbers are not mapped to physical PDF pages by offset assumption; the mapping is verified against page images or explicit page records.
+- Reader text contains no model verdicts, candidate fields, repair-queue text, pipeline states, or internal validation messages.
 
 ## G6 Publication
 
@@ -59,10 +63,11 @@
 - The quality report lists coverage, grade, models/tools, cost, unresolved items, and limitations.
 - The declared release path is checked for locks before generation. A temporary PDF is validated before atomic replacement; a lock may block replacement but must not create a second ambiguous official release.
 - Grade A requires zero active material items. Grade B rejects every active high-impact item. The quality report's candidate, adjudication, active-decision, and open counts must match the ledgers.
+- For ordinary-reader editions, `editorial-report.json` must pass its contract and its high-impact count must match the adjudication ledger. Structural and visual success cannot upgrade a semantically blocked edition.
 - The release includes the declared cover, copyright/credits page, author/editor/producer credits, clickable TOC, and PDF bookmarks.
 - `release_filename` exists, matches the declared book title and edition label, and is the single unambiguous official PDF.
 - Link targets and local assets are validated programmatically. Every rendered page is inspected for short and medium books; long books receive full anomaly checks and stratified visual inspection.
 
 ## Grade rule
 
-Grade A requires all gates passed and no material unresolved item. Grade B allows bounded ledger items that do not undermine ordinary reading. Grade C covers drafts with material ambiguity. Grade D means the source cannot responsibly support the requested result.
+Grade A requires all gates passed and no material unresolved item. Grade B allows bounded low/medium ledger items that do not undermine ordinary reading and permits no high-impact open item. Grade C covers drafts with material ambiguity, any active high-impact item, or an incomplete semantic/editorial contract. Grade D means the source cannot responsibly support the requested result.

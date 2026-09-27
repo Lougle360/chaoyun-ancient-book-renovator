@@ -18,9 +18,12 @@ Label additions as `编者导读`, `编者注`, `背景说明`, `术语说明`, 
 
 ## Ordinary-reader edition
 
+- Make every intervention answer a reader problem: use `增` for necessary context and examples, `删` for repetition and pipeline clutter in the reading path, `改` for clear modern expression, and `整` for navigable structure. Preserve displaced source material and provenance.
 - Open with a plain-language book introduction and reading map before the original preface/body.
+- Make the introduction explain what the surviving book is, what it contains, why it matters to this reader, how its parts relate, what is distinctive, where to begin, what remains uncertain, and what this edition changed.
 - Introduce each major chapter with the question it answers and the concepts the reader needs.
 - Define a specialist term at first occurrence, use it consistently, and include it in the end glossary.
+- Give core glossary terms a plain explanation, book-specific use, exact source occurrence, example, related concepts, and common-confusion warning. A circular definition or another unexplained technical label does not count.
 - Prefer concrete examples and observation sequences over abstract paraphrase when the source permits them.
 - Keep a clean continuous reading path; place dense case catalogues and lookup material in clearly labeled reference sections when appropriate.
 

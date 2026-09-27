@@ -27,6 +27,119 @@ UNCERTAINTY_STATUSES = {"resolved_confirmed", "resolved_noncontent", "resolved_s
 READER_IMPACTS = {"none", "low", "medium", "high"}
 
 
+def requires_editorial_report(book: dict) -> bool:
+    target = str(book.get("target_reader") or "")
+    label = str(book.get("edition_label") or "")
+    return "普通" in target or "ordinary" in target.lower() or "现代白话" in label
+
+
+def validate_editorial_report(root: Path, high_open: int, errors: list[str]) -> None:
+    path = root / "50-edited" / "editorial-report.json"
+    if not path.is_file():
+        errors.append("ordinary-reader edition requires 50-edited/editorial-report.json")
+        return
+    try:
+        report = read_json(path)
+    except (OSError, ValueError, json.JSONDecodeError) as exc:
+        errors.append(f"invalid editorial-report.json: {exc}")
+        return
+
+    reader_validator = Path(__file__).resolve().parents[2] / "chaoyun-reading-editor" / "scripts" / "validate_reader_value.py"
+    if not reader_validator.is_file():
+        errors.append("missing chaoyun-reading-editor reader-value validator")
+        return
+    spec = importlib.util.spec_from_file_location("chaoyun_reader_value_contract", reader_validator)
+    if spec is None or spec.loader is None:
+        errors.append("could not load reader-value validator")
+        return
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    reader_errors, reader_counts = module.validate(root)
+    errors.extend(reader_errors)
+    try:
+        reader_aids = read_json(root / "50-edited/reader-aids.json")
+    except (OSError, ValueError, json.JSONDecodeError):
+        reader_aids = {}
+
+    nature = report.get("book_nature") if isinstance(report.get("book_nature"), dict) else {}
+    for key in ("summary", "attribution_basis"):
+        if not str(nature.get(key) or "").strip():
+            errors.append(f"editorial-report book_nature.{key} is required")
+    if nature.get("compilation_status") not in {"single_work", "layered_compilation", "uncertain"}:
+        errors.append("editorial-report book_nature.compilation_status is invalid")
+
+    toc = report.get("source_toc") if isinstance(report.get("source_toc"), dict) else {}
+    if toc.get("status") == "reconstructed":
+        if toc.get("physical_page_mapping_verified") is not True:
+            errors.append("editorial-report source TOC physical-page mapping is not verified")
+        if not isinstance(toc.get("source_pages"), list) or not toc.get("source_pages"):
+            errors.append("editorial-report reconstructed source TOC requires source_pages")
+        if not isinstance(toc.get("entry_count"), int) or toc.get("entry_count", 0) < 1:
+            errors.append("editorial-report reconstructed source TOC requires entries")
+    elif toc.get("status") == "source_absent_with_reason":
+        if not str(toc.get("reason") or "").strip():
+            errors.append("editorial-report absent source TOC requires a reason")
+    else:
+        errors.append("editorial-report source_toc.status is invalid")
+
+    structure = report.get("reader_structure") if isinstance(report.get("reader_structure"), dict) else {}
+    if not isinstance(structure.get("entry_count"), int) or structure.get("entry_count", 0) < 1:
+        errors.append("editorial-report reader structure requires entries")
+    if structure.get("editor_additions_labeled") is not True:
+        errors.append("editorial-report requires labeled editor additions")
+
+    glossary = report.get("glossary") if isinstance(report.get("glossary"), dict) else {}
+    if glossary.get("status") == "completed":
+        entries = glossary.get("entry_count")
+        if not isinstance(entries, int) or entries < 1 or glossary.get("entries_with_first_occurrence") != entries:
+            errors.append("editorial-report glossary entries require first-occurrence evidence")
+        for report_key, count_key in (
+            ("entry_count", "glossary_entries"),
+            ("entries_with_first_occurrence", "glossary_with_first_occurrence"),
+            ("core_entry_count", "glossary_core"),
+            ("reader_review_sampled", "glossary_sampled"),
+        ):
+            if glossary.get(report_key) != reader_counts.get(count_key):
+                errors.append(f"editorial-report glossary.{report_key} does not match reader-aids.json")
+    elif glossary.get("status") == "not_applicable_with_reason":
+        if not str(glossary.get("reason") or "").strip():
+            errors.append("editorial-report omitted glossary requires a reason")
+    else:
+        errors.append("editorial-report glossary.status is invalid")
+
+    reader_value = report.get("reader_value") if isinstance(report.get("reader_value"), dict) else {}
+    aids_review = reader_aids.get("reader_review") if isinstance(reader_aids.get("reader_review"), dict) else {}
+    expected_reader_value = {
+        "introduction_sections": reader_counts.get("introduction_sections"),
+        "required_questions_passed": reader_counts.get("reader_review_questions"),
+        "producer": aids_review.get("producer"),
+        "reviewer": aids_review.get("reviewer"),
+        "status": aids_review.get("status"),
+    }
+    for key, expected in expected_reader_value.items():
+        if reader_value.get(key) != expected:
+            errors.append(f"editorial-report reader_value.{key} does not match reader-aids.json")
+
+    figures = report.get("figures") if isinstance(report.get("figures"), dict) else {}
+    figure_counts = [figures.get(key) for key in (
+        "content_figures_total", "content_figures_rendered", "content_figures_guided"
+    )]
+    if any(not isinstance(value, int) or value < 0 for value in figure_counts) or len(set(figure_counts)) != 1:
+        errors.append("editorial-report content figures must all be rendered and specifically guided")
+
+    semantic = report.get("semantic_review") if isinstance(report.get("semantic_review"), dict) else {}
+    if semantic.get("high_impact_open") != high_open:
+        errors.append("editorial-report semantic_review.high_impact_open mismatch")
+    if high_open and semantic.get("status") != "blocked_by_high_impact_open_items":
+        errors.append("editorial-report must mark active high-impact items as blocking")
+    if not high_open and semantic.get("status") not in {"passed", "passed_with_ledger"}:
+        errors.append("editorial-report semantic_review.status is invalid")
+
+    pipeline = report.get("pipeline_language_scan") if isinstance(report.get("pipeline_language_scan"), dict) else {}
+    if pipeline.get("forbidden_matches") != 0:
+        errors.append("editorial-report reader layer contains internal pipeline language")
+
+
 def read_json(path: Path) -> dict:
     value = json.loads(path.read_text(encoding="utf-8"))
     if not isinstance(value, dict):
@@ -75,7 +188,8 @@ def validate_uncertainties(root: Path, errors: list[str]) -> dict[str, int]:
     spec.loader.exec_module(module)
     errors.extend(module.validate(root, candidates, decisions))
     expected = module.projection(decisions)
-    if open_items != expected:
+    comparable_open_items = [{key: value for key, value in row.items() if key != "_line"} for row in open_items]
+    if comparable_open_items != expected:
         errors.append("uncertain-items.jsonl is not the current open-material projection")
     active = module.active_decisions(decisions)
     high_open = sum(1 for row in active if row.get("status") == "open_material" and row.get("reader_impact") == "high")
@@ -213,6 +327,8 @@ def main() -> int:
             errors.append("grade A cannot contain open_material uncertainty")
         if grade == "B" and uncertainty_counts.get("high_open", 0):
             errors.append("grade B cannot contain high-impact open_material uncertainty")
+        if requires_editorial_report(book):
+            validate_editorial_report(root, uncertainty_counts.get("high_open", 0), errors)
 
     result = {"valid": not errors, "stage": args.stage, "counts": counts,
               "uncertainties": uncertainty_counts, "warnings": warnings, "errors": errors}
