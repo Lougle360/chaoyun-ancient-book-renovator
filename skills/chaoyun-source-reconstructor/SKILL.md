@@ -13,7 +13,7 @@ Create the evidentiary source edition that all later stages depend on.
 2. Render or preserve page images at sufficient resolution for later verification. Keep source page numbering separate from logical numbering.
 3. Extract or OCR regions with coordinates, block type, language hint, and reading-order index. Use multiple passes only where diagnosis shows a concrete benefit.
 4. Reconstruct headings, body, notes, captions, tables, figures, and cross-page paragraphs according to visible evidence.
-5. Assign stable `page_id` and `block_id` values. Write `20-source/blocks.jsonl` before producing `20-source/source.md`.
+5. Assign stable `page_id` and `block_id` values. Every block records `component_id`, `structural_role`, `bbox`, and page-local `reading_order`. Write `20-source/blocks.jsonl` before producing `20-source/source.md`.
 6. Compare representative and high-risk pages against source images. Put uncertain glyphs, reading order, and damaged regions into the audit ledger.
 
 Follow [references/reconstruction-policy.md](references/reconstruction-policy.md).
@@ -23,6 +23,7 @@ Follow [references/reconstruction-policy.md](references/reconstruction-policy.md
 - Preserve original characters, wording, claims, mistakes, and historical forms at this stage.
 - Do not use semantic plausibility as proof of an unreadable glyph.
 - Do not collapse marginalia or commentary into the main text without explicit structural evidence.
+- Do not represent an annotated or multi-register page as one catch-all `body` block. Separate visible main text, commentary, headings, running matter and other regions before modernization.
 - Preserve figures and complex tables as images when a structured transcription cannot be verified.
 - Remove repeated headers or page numbers only after demonstrating the repetition pattern.
 

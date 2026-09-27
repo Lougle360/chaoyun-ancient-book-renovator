@@ -126,8 +126,8 @@ def validate(root):
             return []
         if book.get('delivery_mode') != 'ordinary_reader':
             return ['production requires explicit delivery_mode']
-        if book.get('workflow_schema_version') not in {'1.7', '1.8'}:
-            errors.append('ordinary-reader production requires workflow 1.7 or 1.8; preserve legacy evidence and perform fresh design/sample review')
+        if book.get('workflow_schema_version') not in {'1.7', '1.8', '1.9'}:
+            errors.append('ordinary-reader production requires workflow 1.7, 1.8 or 1.9; preserve legacy evidence and perform fresh design/sample review')
         plan = obj(local(root, '50-edited/production-plan.json'))
         if plan.get('schema_version') != '1.0':
             errors.append('production-plan schema must be 1.0')

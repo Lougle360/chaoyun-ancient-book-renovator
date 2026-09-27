@@ -28,6 +28,19 @@ def compact(text):
     return "".join(c for c in unicodedata.normalize("NFC", text) if not c.isspace())
 
 
+def without_generated_navigation_sections(text, navigation, navigation_pages):
+    """Remove manuscript sections whose rendered pages are generated navigation."""
+    headings = [
+        str(row.get("heading"))
+        for row in navigation
+        if row.get("target_page") in navigation_pages and row.get("heading")
+    ]
+    for heading in headings:
+        pattern = rf"^#{{1,6}}\s+{re.escape(heading)}\s*$.*?(?=^#{{1,6}}\s+|\Z)"
+        text = re.sub(pattern, "", text, flags=re.M | re.S)
+    return text
+
+
 def page_text(page, review, headings, errors):
     """Exclude only exact declared running headers/page numbers in page-edge strips."""
     import pymupdf
@@ -108,7 +121,10 @@ def validate(root, pdf):
                 for page in document
                 if page.number + 1 not in navigation_pages
             ))
-            expected = prose(text)
+            expected_text = without_generated_navigation_sections(
+                text, manifest.get('navigation') or [], navigation_pages
+            )
+            expected = prose(expected_text)
             if not expected or expected != extracted:
                 errors.append("PDF text does not cover the accepted Markdown in reading order")
             navigation = manifest.get('navigation') or []

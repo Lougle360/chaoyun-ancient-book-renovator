@@ -23,7 +23,7 @@ Record target reader, reading goal, reading level, modernization depth, annotati
 
 ## Editing work
 
-1. Preserve every source `block_id` in `50-edited/blocks.jsonl` while allowing display-level paragraph grouping with contributing IDs.
+1. Preserve every source `block_id` in `50-edited/blocks.jsonl` while allowing display-level paragraph grouping with contributing IDs. Maintain `50-edited/source-reader-map.jsonl`: exactly one row per source block, with its component, destination, reader heading and an exact reader quote or an explicit preserved non-reading destination. Hidden comments and aggregated anchors are not mapping evidence.
 2. Build coherent book, volume, chapter, section, note, figure, and table hierarchy.
 3. Improve sentence length, transitions, and paragraphing only within the accepted meaning.
 4. Add a front-of-book reading map when the original structure is unfamiliar, and give each major chapter a concise introduction stating its question, key concepts, and reading route.
@@ -34,7 +34,7 @@ Record target reader, reading goal, reading level, modernization depth, annotati
 9. Treat the book introduction as a substantive reader deliverable. Explain the surviving work, intended reader, reader value, contents and relationships, distinctive features, textual context, reading routes, limitations, and what this edition changed. A production note or generic praise is not an introduction.
 10. Build a term inventory from this book, then write tiered glossary entries. Core terms require a plain definition, contextual definition, exact first source occurrence, usage example, related concepts, and common-confusion guidance. Do not publish one-line labels that send the reader back to the unexplained text.
 11. Generate `50-edited/reader-aids.json`, then render `50-edited/modern-reading.md`. Derive `editorial-report.json` counts from the structured reader aids; never type success counts independently.
-12. Assemble final cover/credits wording and all reader-facing sections before full-reader review. Maintain the book-specific `50-edited/delivery-contract.json` outcomes using the controller's `references/delivery-and-rework.md`. Preserve this complete information-rich draft as the process edition, then hand it to `$chaoyun-reader-experience-reviser` for the final-reader cut and full regression; do not certify it from the same production pass.
+12. Assemble final cover/credits wording and all reader-facing sections before full-reader review. Maintain the book-specific `50-edited/delivery-contract.json` outcomes using the controller's `references/delivery-and-rework.md`. Preserve this complete information-rich draft as the process edition, then hand it to `$chaoyun-reader-experience-reviser` for the final-reader cut and full regression; do not certify it from the same production pass. A large cut requires issue-level revision rows with before/after evidence; one catch-all `rewrite` record cannot account for a book-scale deletion.
 
 Use [references/editorial-policy.md](references/editorial-policy.md) for boundaries and labeling.
 For ordinary-reader work, read and enforce [references/reader-value-contract.md](references/reader-value-contract.md), then run:

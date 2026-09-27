@@ -28,8 +28,8 @@ def validate(root):
         manuscript = root / '50-edited/modern-reading.md'
         text = manuscript.read_text(encoding='utf-8')
         compact_final = contract.get('rendering_profile') == 'compact_final_reader'
-        if str(book.get('workflow_schema_version') or '') == '1.8' and not compact_final:
-            errors.append('workflow 1.8 ordinary-reader delivery requires compact_final_reader rendering_profile')
+        if str(book.get('workflow_schema_version') or '') in {'1.8', '1.9'} and not compact_final:
+            errors.append('workflow 1.8+ ordinary-reader delivery requires compact_final_reader rendering_profile')
         paths = ['20-source/blocks.jsonl', '30-normalized/blocks.jsonl', '40-modernized/blocks.jsonl',
                  '50-edited/blocks.jsonl', '50-edited/modern-reading.md', '50-edited/delivery-contract.json']
         for relative in paths:

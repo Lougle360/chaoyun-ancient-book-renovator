@@ -277,14 +277,14 @@ def validate(root: Path) -> tuple[list[str], dict[str, int]]:
     if acceptance.get("output_sha256") != output_hash:
         errors.append("reader acceptance hash does not match 50-edited/modern-reading.md")
 
-    if workflow_version == "1.8":
+    if workflow_version in {"1.8", "1.9"}:
         cut = acceptance.get("final_reader_cut")
         required_checks = {
             "ai_authored_material", "guide_material_removed", "chapter_completeness",
             "terminology_plainness", "figure_truthfulness", "pipeline_language_absent",
         }
         if not isinstance(cut, dict):
-            errors.append("workflow 1.8 requires final_reader_cut evidence")
+            errors.append("workflow 1.8+ requires final_reader_cut evidence")
         else:
             if cut.get("status") != "passed" or cut.get("rendering_profile") != "compact_final_reader":
                 errors.append("final_reader_cut must pass with compact_final_reader profile")

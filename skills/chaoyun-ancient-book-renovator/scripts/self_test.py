@@ -338,6 +338,9 @@ def main() -> int:
 
         book_path = workspace / "book.json"
         book = json.loads(book_path.read_text(encoding="utf-8"))
+        # The long-standing suite remains a workflow-1.8 compatibility test.
+        # Workflow 1.9 integrity gates have their own adversarial regression test.
+        book["workflow_schema_version"] = "1.8"
         book["source_pages"] = 1
         book["source_pdf_pages"] = 1
         write_json(book_path, book)

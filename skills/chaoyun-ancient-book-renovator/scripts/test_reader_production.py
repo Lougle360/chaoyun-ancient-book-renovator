@@ -89,7 +89,7 @@ class ProductionTests(unittest.TestCase):
 
     def test_legacy_requires_migration(self):
         write(self.root / 'book.json', {'delivery_mode': 'ordinary_reader', 'workflow_schema_version': '1.6'})
-        self.assertTrue(any('1.7 or 1.8' in e for e in validate(self.root)))
+        self.assertTrue(any('1.7, 1.8 or 1.9' in e for e in validate(self.root)))
 
     def test_archive_exempt(self):
         write(self.root / 'book.json', {'delivery_mode': 'evidence_archive'})

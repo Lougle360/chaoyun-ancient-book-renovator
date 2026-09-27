@@ -2,7 +2,7 @@
 
 ## Directory layout
 
-Workflow 1.8 extends the existing 1.7 reader-production and 1.6 doubt-closure contracts. Ordinary-reader work adds `40-modernized/book-understanding.md`, `50-edited/editorial-plan.md`, `50-edited/production-plan.json`, `50-edited/sample/reader-sample.md`, an immutable process-edition snapshot, and final-reader-cut evidence with retained reading-session files. Their single authoritative contract is [reader-production.md](reader-production.md). Reader review/acceptance remains schema 1.2; append-only revision events retain 1.1. Existing 1.6 pilot/closure files remain required. Do not initialize fake successful planning or sample artifacts.
+Workflow 1.9 extends the existing 1.8 reader-production and 1.6 doubt-closure contracts. Ordinary-reader work additionally freezes `10-diagnosis/edition-scope.json`, records `50-edited/source-reader-map.jsonl`, stores complete passes under `50-edited/review-history/full-passes/`, and freezes the actual validator hashes in `90-audit/acceptance-policy-lock.json`. Ordinary-reader work also retains `40-modernized/book-understanding.md`, `50-edited/editorial-plan.md`, `50-edited/production-plan.json`, `50-edited/sample/reader-sample.md`, an immutable process-edition snapshot, and final-reader-cut evidence with retained reading-session files. Their single authoritative contract is [reader-production.md](reader-production.md). Reader review/acceptance remains schema 1.2; append-only revision events retain 1.1. Existing 1.6 pilot/closure files remain required. Do not initialize fake successful planning or sample artifacts.
 
 ```text
 book-workspace/
@@ -12,7 +12,8 @@ book-workspace/
 |   `-- source-manifest.json
 |-- 10-diagnosis/
 |   |-- profile.json
-|   `-- page-map.jsonl
+|   |-- page-map.jsonl
+|   `-- edition-scope.json
 |-- 20-source/
 |   |-- source.md
 |   |-- blocks.jsonl
@@ -32,7 +33,9 @@ book-workspace/
 |   |-- reader-review.json
 |   |-- reader-revision-ledger.jsonl
 |   |-- reader-acceptance-report.json
-|   |-- review-history/ (immutable cycle snapshots and execution records)
+|   |-- source-reader-map.jsonl
+|   |-- review-policy.json
+|   |-- review-history/ (immutable cycles, complete passes, transcripts and execution records)
 |   `-- editorial-report.json
 |-- 60-publication/
 |   |-- modern-reading.md
@@ -42,11 +45,13 @@ book-workspace/
 |       |-- source-comparison.md
 |       `-- source-comparison.pdf
 `-- 90-audit/
+    |-- acceptance-policy-lock.json
     |-- events.jsonl
     |-- uncertainty-candidates.jsonl
     |-- uncertainty-adjudication.jsonl
     |-- uncertain-items.jsonl
     |-- release-binding.json (final file hashes and per-page visual review)
+    |-- pdf-reader-review.json
     `-- quality-report.json
 ```
 

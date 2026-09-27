@@ -48,11 +48,15 @@ def main():
                 path = directory / f"page-{number:04d}.png"
                 page.get_pixmap(matrix=pymupdf.Matrix(1, 1), colorspace=pymupdf.csRGB, alpha=False).save(path)
                 reviews.append({"page": number, "image": path.relative_to(root).as_posix(),
-                                "status": "pending", "issues": [], "reviewer": None, "evidence": None})
-        manifest = {"schema_version": "1.0", "renderer": "PyMuPDF " + pymupdf.VersionBind,
+                                "role": None, "status": "pending", "issues": [],
+                                "checks": {key: None for key in ("legibility", "density", "whitespace", "hierarchy", "continuity")},
+                                "density_exception": None, "furniture": [],
+                                "reviewer": None, "evidence": None})
+        manifest = {"schema_version": "1.1", "renderer": "PyMuPDF " + pymupdf.VersionBind,
                     "manuscript_sha256": sha(edited), "markdown_sha256": sha(markdown),
                     "pdf_sha256": pdf_hash, "assets": assets, "page_reviews": reviews}
         manifest['navigation'] = [{"heading": heading, "target_page": None, "link_page": None,
+                                   "visible_page_label": None,
                                    "status": "pending", "evidence": None}
                                   for heading in re.findall(r'^#{1,2}\s+(.+?)\s*$', markdown.read_text(encoding='utf-8'), re.M)]
         with destination.open('x', encoding='utf-8') as handle:

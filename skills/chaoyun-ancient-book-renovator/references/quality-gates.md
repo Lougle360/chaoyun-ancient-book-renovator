@@ -13,6 +13,7 @@
 - Every page has a route and layout/language classification.
 - Every distinct page family has a representative verification sample.
 - Known unsupported content is recorded before bulk processing.
+- Workflow 1.9 locks `edition-scope.json`: every source component has a declared destination, and source-bearing exclusions preserve explicit user authorization.
 
 ## G2 Faithful source
 
@@ -20,6 +21,7 @@
 - Reading order, headings, notes, images, captions, and tables are checked against page images.
 - OCR uncertainties remain visible; fluent inference is not accepted as transcription evidence.
 - Raw uncertainty candidates have stable IDs and preserve source-image evidence; they are not yet treated as reader-facing defects.
+- Each block has a source component, structural role, real region and reading order. An annotated or multi-register page cannot pass as one catch-all body block.
 
 ## G2.5 Uncertainty adjudication
 
@@ -69,6 +71,7 @@ Workflow 1.8 requires reader review/acceptance 1.2: meaningful contiguous units,
 - Deletion from the reading path preserves source material and provenance. Medium/high semantic-risk revisions enter the unified uncertainty lifecycle.
 - A fresh regression reviewer differs from the revision producer. The acceptance hash matches the final manuscript, no proposed or returned revision remains unresolved, and glossary sampling passes.
 - Reader schema 1.1 requires real input/output snapshots and replayable edits, evidenced closure across every cycle, complete section-level comprehension records, all core terms rechecked, and separate production/review execution records. See the reader-revision contract; strings naming different reviewers alone do not prove independent review.
+- Workflow 1.9 requires at least three complete passes of the exact manuscript and two stable final passes with no new or open blocker. Each pass binds a real transcript and distinct execution record. Large cuts require issue-level revision rows, not one catch-all rewrite.
 
 ## G6 Publication
 
@@ -84,6 +87,7 @@ Workflow 1.8 requires reader review/acceptance 1.2: meaningful contiguous units,
 - Link targets and local assets are validated programmatically. Every ordinary-reader PDF page is inspected regardless of book length; other delivery modes declare their inspection scope.
 - Candidate promotion runs both gates before replacing the official PDF. Book-specific outcomes and source-to-reader fidelity evidence are required; see [delivery-and-rework.md](delivery-and-rework.md).
 - For ordinary-reader editions, the release manifest binds manuscript, publication Markdown, assets, PDF and page images; source fidelity and actual reader comprehension still require substantive review.
+- Workflow 1.9 freezes validator hashes before semantic review. It requires page roles, page-specific layout findings, visible page numbers, TOC page labels, preserved list/glossary hierarchy and a sequential final-PDF reader review.
 
 ## Grade rule
 

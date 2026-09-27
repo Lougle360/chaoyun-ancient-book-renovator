@@ -13,9 +13,11 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from validate_release_binding import validate as validate_release_binding
+from validate_pdf_readability import validate as validate_pdf_readability
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / 'chaoyun-ancient-book-renovator' / 'scripts'))
 from validate_production_plan import validate as validate_production_plan
+from validate_integrity import validate as validate_integrity
 
 
 IMAGE = re.compile(r"!\[[^\]]*\]\(([^)]+)\)")
@@ -176,7 +178,10 @@ def main() -> int:
     if pdf.is_file() and not pdf.read_bytes()[:5] == b"%PDF-":
         errors.append(f"official PDF does not have a PDF header: {pdf.relative_to(root)}")
     if ordinary_reader:
+        errors.extend(validate_integrity(root))
         errors.extend(validate_release_binding(root, pdf))
+        if str(book_data.get("workflow_schema_version") or "") == "1.9" and pdf.is_file():
+            errors.extend(validate_pdf_readability(root, pdf))
         alias = root / "60-publication/modern-reading.pdf"
         if not args.candidate_pdf and alias.is_file() and pdf.is_file() and alias.read_bytes() != pdf.read_bytes():
             errors.append("internal PDF alias differs from the official release")

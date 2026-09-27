@@ -46,6 +46,8 @@ After freezing the full manuscript, run `python scripts/prepare_delivery_review.
 
 Every source block appears once. For content, record exact `source_quote`, `modern_quote`, `reader_quote`, `status`, `evidence`, and explanatory `checks` for `omissions`, `additions`, `negation`, `conditions`, `quantities`, `terms`. Read the entire affected passage, not just the chosen quote. Explain non-applicable checks rather than writing an empty field. Noncontent, excluded and unreadable blocks require `disposition_reason`; uncertainty remains in the unified ledger and reader-facing disclosure where needed.
 
+Workflow 1.9 also requires `50-edited/source-reader-map.jsonl`. Each source block has exactly one mapping row. A source-bearing row names its source component, exact final heading and exact final-reader quote; the quote must occur inside that declared section. A displaced row names its preserved supplement or evidence destination. HTML comments, IDs collected at the end of the manuscript, and generic first-character quotes do not establish semantic mapping.
+
 Content figures/tables/maps/diagrams additionally have `block_id`, `section_heading`, `guidance_quote`, `status`, `evidence`. Compare the actual original image, final figure, labels and explanation; counts alone are insufficient. Source figure block types must be correctly classified. The script verifies inventory/locations; it cannot judge figure meaning.
 
 The audit retains distinct `producer` and `reviewer` identities and binds source, normalized, modernized, edited records, manuscript and delivery contract with `input_hashes`. Any change to those inputs invalidates this acceptance. Never merely refresh hashes: conduct the affected review and preserve the superseded report.

@@ -1,6 +1,8 @@
 # Whole-book reader revision contract
 
-Workflow 1.8 uses reader review/acceptance schema **1.2** and adds final-reader-cut evidence without changing the schema number. Preserve legacy reports and perform fresh review; do not manufacture historical snapshots or execution records. The examples below describe the base fields; actual reading-session and finalization fields are also required as specified in [reader-production](../../chaoyun-ancient-book-renovator/references/reader-production.md). Revision-event schema remains 1.1 for append-only compatibility.
+Workflow 1.9 uses reader review/acceptance schema **1.2** and adds auditable repeated full-manuscript passes without changing the schema number. Preserve legacy reports and perform fresh review; do not manufacture historical snapshots or execution records. The examples below describe the base fields; actual reading-session and finalization fields are also required as specified in [reader-production](../../chaoyun-ancient-book-renovator/references/reader-production.md). Revision-event schema remains 1.1 for append-only compatibility.
+
+Before review, create `50-edited/review-policy.json` with `minimum_full_passes >= 3` and `required_stable_passes >= 2`. Three is a floor, not an automatic finish line. Each real pass writes one JSON record plus its retained transcript under `50-edited/review-history/full-passes/`. The record binds `manuscript_sha256`, a distinct `reviewer_run_id`, `status`, `findings`, `sections_covered`, `new_blocking_issues`, `open_blocking_issues`, `transcript`, and `transcript_sha256`. Every chapter and front/back-matter unit is actually read in every pass. The final required stable passes must both have no new or open blocking issue. Any edit after a pass invalidates its manuscript hash and restarts the stability count.
 
 ## Reader review
 

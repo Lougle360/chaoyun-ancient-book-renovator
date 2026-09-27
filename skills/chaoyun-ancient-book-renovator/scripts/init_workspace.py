@@ -103,7 +103,7 @@ def main() -> int:
         output / "book.json",
         {
             "schema_version": "1.0",
-            "workflow_schema_version": "1.8",
+            "workflow_schema_version": "1.9",
             "delivery_mode": args.delivery_mode,
             "book_id": book_id,
             "title": source.stem,
@@ -121,13 +121,25 @@ def main() -> int:
         output / "run-state.json",
         {
             "schema_version": "1.0",
-            "workflow_schema_version": "1.8",
+            "workflow_schema_version": "1.9",
             "book_id": book_id,
             "updated_at": now,
             "stages": {stage: {"status": "pending"} for stage in STAGES
                        if args.delivery_mode == "ordinary_reader" or stage not in {"book_understood", "reader_designed", "sample_accepted"}},
+            "current_stage": "intake",
         },
     )
+    if args.delivery_mode == "ordinary_reader":
+        write_json(
+            output / "50-edited/review-policy.json",
+            {
+                "schema_version": "1.0",
+                "minimum_full_passes": 3,
+                "required_stable_passes": 2,
+                "required_methods": ["manuscript_reader", "source_fidelity", "final_pdf_reader"],
+                "rule": "Continue until all blocking issues close and the final two complete passes find no new blockers.",
+            },
+        )
     (output / "90-audit/events.jsonl").touch()
     (output / "90-audit/uncertainty-candidates.jsonl").touch()
     (output / "90-audit/uncertainty-adjudication.jsonl").touch()
