@@ -53,25 +53,26 @@ When the user asks for “普通人可以直接阅读” or equivalent, use the 
 
 3. Use `$chaoyun-pdf-diagnoser` to create the book profile and page-level route map. Read [references/routing.md](references/routing.md) when layouts or languages are mixed.
 4. Use `$chaoyun-source-reconstructor` to create the faithful source Markdown and page/block records. Do not proceed if source coverage or reading order fails its gate.
-5. Use `$chaoyun-uncertainty-adjudicator` to preserve raw candidates, merge duplicate reports, separate nonbody/structural issues from true source ambiguity, and create the first material open-item projection. Do not send an unreviewed model-warning list directly to readers.
+5. Run `$chaoyun-uncertainty-adjudicator` at the source-reconstruction checkpoint. It is one unified lifecycle, not a fixed “first” or “second” list: every later stage may open another review cycle while preserving stable candidate and issue identities.
 6. Use `$chaoyun-text-normalizer` for script conversion, variant-character policy, punctuation, and segmentation. This stage must not paraphrase.
 7. Use `$chaoyun-classical-modernizer` for classical Chinese-to-modern Chinese and Japanese-to-modern Chinese. Route mixed-language blocks separately.
-8. Use `$chaoyun-reading-editor` to build the declared reader edition, including its evidence-based introduction, reading route, chapter guidance, first-use terminology, figure guidance, and tiered glossary, while keeping editor-created material explicitly labeled. Require `50-edited/reader-aids.json` and a distinct reader-review pass.
-9. Run `$chaoyun-uncertainty-adjudicator` again to include translation and editorial findings. The reader-facing ledger must contain only current `open_material` decisions, with reader impact and evidence.
-10. Use `$chaoyun-quality-publisher` for independent semantic checks, formal front matter, official release naming, package audit, and Markdown/PDF production. Detect whether the declared PDF path is open or locked before rendering; write a temporary artifact and atomically replace the official file only after validation. Never silently publish a differently named second “official” PDF.
-11. Run the deterministic contract validator:
+8. Use `$chaoyun-reading-editor` to build the first declared reader edition, including its evidence-based introduction, reading route, chapter guidance, first-use terminology, figure guidance, and tiered glossary, while keeping editor-created material explicitly labeled.
+9. Use `$chaoyun-reader-experience-reviser` to read the complete manuscript as the target reader, record obstacles before editing, apply traceable `增、删、改、整`, and run a separate regression review. Repeat this reader-revision cycle until its gate passes.
+10. Run `$chaoyun-uncertainty-adjudicator` at every checkpoint that generated new OCR, translation, terminology, structural, reader-edit, or proof concerns. There is no maximum number of cycles. The reader-facing ledger contains only current `open_material` decisions with reader impact and evidence.
+11. Use `$chaoyun-quality-publisher` for independent semantic checks, formal front matter, official release naming, package audit, and Markdown/PDF production. Detect whether the declared PDF path is open or locked before rendering; write a temporary artifact and atomically replace the official file only after validation. Never silently publish a differently named second “official” PDF.
+12. Run the deterministic contract validator:
 
    ```shell
    python scripts/validate_workspace.py output-directory --stage publication
    ```
 
-12. Report the achieved grade, source-page accounting, reader-facing PDF page count, raw candidate count, adjudicated count, material unresolved count, and the single official release path. Never call a run complete merely because files exist.
+13. Report the achieved grade, source-page accounting, reader-facing PDF page count, uncertainty cycles, raw candidate count, adjudicated count, material unresolved count, reader revision count, and the single official release path. Never call a run complete merely because files exist.
 
 For scan-heavy books, do not publish a full-book reading edition until every included source page has page-level visual evidence or an explicit `unreadable` / `noncontent` disposition. Text-only judging against inherited OCR is not an independent semantic check. The contract validator and publication auditor must both exit successfully; a hand-written `passed_with_ledger` state cannot override either failure.
 
 ## State and stopping rules
 
-- Stages are `intake`, `diagnosis`, `source`, `source_adjudicated`, `normalized`, `modernized`, `edited`, `final_adjudicated`, and `publication`.
+- Stages are `intake`, `diagnosis`, `source`, `source_adjudicated`, `normalized`, `modernized`, `edited`, `reader_revised`, `final_adjudicated`, and `publication`.
 - A later stage may start only after the preceding gate is `passed` or explicitly `passed_with_ledger`.
 - Use append-only audit records and preserve stage outputs; do not rewrite earlier evidence in place.
 - Support resume from the last completed stage. A retry must not duplicate accepted records.
@@ -83,7 +84,7 @@ For scan-heavy books, do not publish a full-book reading edition until every inc
 
 ## Completion grades
 
-- **A — publication-ready:** all gates pass, all content blocks are accounted for, and no high-risk uncertainty remains.
+- **A — publication-ready:** all gates pass, all content blocks are accounted for, and no active material uncertainty remains.
 - **B — readable with ledger:** the edition is usable, with bounded uncertainties fully listed and linked to source evidence, and no active high-impact item.
 - **C — assisted draft:** substantial uncertainties or layout/translation risks remain; do not present as publication-ready.
 - **D — unrecoverable:** source evidence is insufficient for a responsible conversion.

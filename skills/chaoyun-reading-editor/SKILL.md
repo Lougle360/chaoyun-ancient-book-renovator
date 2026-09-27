@@ -26,7 +26,7 @@ Record target reader, reading goal, reading level, modernization depth, annotati
 9. Treat the book introduction as a substantive reader deliverable. Explain the surviving work, intended reader, reader value, contents and relationships, distinctive features, textual context, reading routes, limitations, and what this edition changed. A production note or generic praise is not an introduction.
 10. Build a term inventory from this book, then write tiered glossary entries. Core terms require a plain definition, contextual definition, exact first source occurrence, usage example, related concepts, and common-confusion guidance. Do not publish one-line labels that send the reader back to the unexplained text.
 11. Generate `50-edited/reader-aids.json`, then render `50-edited/modern-reading.md`. Derive `editorial-report.json` counts from the structured reader aids; never type success counts independently.
-12. Run a separate reader review with a reviewer identity different from the producer. The reviewer must be able to answer what the book is, who it is for, how its parts relate, why to read it, where to start, what its limits are, and what the edition changed.
+12. Hand the complete first reader draft to `$chaoyun-reader-experience-reviser`. Do not certify the draft from the same production pass.
 
 Use [references/editorial-policy.md](references/editorial-policy.md) for boundaries and labeling.
 For ordinary-reader work, read and enforce [references/reader-value-contract.md](references/reader-value-contract.md), then run:
@@ -37,4 +37,4 @@ python scripts/validate_reader_value.py book-workspace
 
 ## Gate
 
-Pass when the declared target reader can follow the book without specialist prerequisites, the introduction answers the required reader questions, every glossary entry has verifiable book-specific evidence, the independent reader review passes, hierarchy and references are coherent, all content IDs are accounted for, and editorial additions are visibly distinct from translated source content. OCR corruption or missing evidence returns to reconstruction. Fluency never overrides semantic fidelity.
+Pass this production stage when the introduction and glossary have verifiable book-specific evidence, hierarchy and references are coherent, all content IDs are accounted for, and editorial additions are visibly distinct from translated source content. Whole-book reader acceptance belongs to `$chaoyun-reader-experience-reviser`; OCR corruption or missing evidence returns to reconstruction. Fluency never overrides semantic fidelity.

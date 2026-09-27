@@ -35,7 +35,9 @@ Create `50-edited/reader-aids.json` under the `$chaoyun-reading-editor` reader-v
   },
   "reader_value": {
     "introduction_sections": 9,
-    "required_questions_passed": 7,
+    "review_dimensions": 9,
+    "revision_cycle": "RC0003",
+    "applied_revisions": 12,
     "producer": "editor-or-model-id",
     "reviewer": "different-reviewer-id",
     "status": "passed"
@@ -63,8 +65,8 @@ Create `50-edited/reader-aids.json` under the `$chaoyun-reading-editor` reader-v
 - If the source has no usable contents, use `source_absent_with_reason` and state the reason. Do not manufacture an original table of contents.
 - A completed glossary is book-specific. Every entry has a first source occurrence in `reader-aids.json`, linked to an existing source block and exact quote. Generic domain definitions alone do not satisfy this contract.
 - Introduction and glossary counts are computed from `reader-aids.json` and must match it. A producer-written count cannot prove coverage.
-- The introduction covers all nine reader-value sections. The separate reader review passes all seven required reader questions.
-- The producer and reader reviewer identities differ. A reader review with unanswered questions, blocking issues, or insufficient glossary sampling blocks publication.
+- The introduction covers all nine reader-value sections. `$chaoyun-reader-experience-reviser` reviews all nine whole-book dimensions and its acceptance hash matches the final manuscript.
+- The revision producer and regression reviewer identities differ. A whole-book review with blocking issues, unresolved proposed changes, missing revision evidence, or insufficient glossary sampling blocks publication.
 - `content_figures_guided` counts figure-specific reading guidance, not repeated boilerplate. Decorative images are excluded from all three content-figure counts.
 - `semantic_review.high_impact_open` equals the current active adjudication ledger. Any value above zero requires Grade C or lower.
 - `pipeline_language_scan.forbidden_matches` covers reader-visible model verdicts, candidate fields, repair queues, internal state names, and validation messages. It must be zero.

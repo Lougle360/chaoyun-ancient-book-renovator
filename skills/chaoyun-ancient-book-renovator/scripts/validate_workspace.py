@@ -19,7 +19,7 @@ STAGE_FILES = {
 ORDER = ["source", "normalized", "modernized", "edited"]
 REQUIRED_PREPUBLICATION_STAGES = [
     "intake", "diagnosis", "source", "source_adjudicated",
-    "normalized", "modernized", "edited", "final_adjudicated",
+    "normalized", "modernized", "edited", "reader_revised", "final_adjudicated",
 ]
 REQUIRED = {"schema_version", "book_id", "page_id", "block_id", "source_page", "block_type", "source_text", "disposition"}
 PAGE_ID = re.compile(r"^P\d{6}$")
@@ -56,10 +56,23 @@ def validate_editorial_report(root: Path, high_open: int, errors: list[str]) -> 
     spec.loader.exec_module(module)
     reader_errors, reader_counts = module.validate(root)
     errors.extend(reader_errors)
+
+    revision_validator = Path(__file__).resolve().parents[2] / "chaoyun-reader-experience-reviser" / "scripts" / "validate_reader_revision.py"
+    if not revision_validator.is_file():
+        errors.append("missing chaoyun-reader-experience-reviser validator")
+        return
+    revision_spec = importlib.util.spec_from_file_location("chaoyun_reader_revision_contract", revision_validator)
+    if revision_spec is None or revision_spec.loader is None:
+        errors.append("could not load reader-revision validator")
+        return
+    revision_module = importlib.util.module_from_spec(revision_spec)
+    revision_spec.loader.exec_module(revision_module)
+    revision_errors, revision_counts = revision_module.validate(root)
+    errors.extend(revision_errors)
     try:
-        reader_aids = read_json(root / "50-edited/reader-aids.json")
+        acceptance = read_json(root / "50-edited/reader-acceptance-report.json")
     except (OSError, ValueError, json.JSONDecodeError):
-        reader_aids = {}
+        acceptance = {}
 
     nature = report.get("book_nature") if isinstance(report.get("book_nature"), dict) else {}
     for key in ("summary", "attribution_basis"):
@@ -97,10 +110,11 @@ def validate_editorial_report(root: Path, high_open: int, errors: list[str]) -> 
             ("entry_count", "glossary_entries"),
             ("entries_with_first_occurrence", "glossary_with_first_occurrence"),
             ("core_entry_count", "glossary_core"),
-            ("reader_review_sampled", "glossary_sampled"),
         ):
             if glossary.get(report_key) != reader_counts.get(count_key):
                 errors.append(f"editorial-report glossary.{report_key} does not match reader-aids.json")
+        if glossary.get("reader_review_sampled") != revision_counts.get("glossary_sampled"):
+            errors.append("editorial-report glossary.reader_review_sampled does not match whole-book reader review")
     elif glossary.get("status") == "not_applicable_with_reason":
         if not str(glossary.get("reason") or "").strip():
             errors.append("editorial-report omitted glossary requires a reason")
@@ -108,13 +122,14 @@ def validate_editorial_report(root: Path, high_open: int, errors: list[str]) -> 
         errors.append("editorial-report glossary.status is invalid")
 
     reader_value = report.get("reader_value") if isinstance(report.get("reader_value"), dict) else {}
-    aids_review = reader_aids.get("reader_review") if isinstance(reader_aids.get("reader_review"), dict) else {}
     expected_reader_value = {
         "introduction_sections": reader_counts.get("introduction_sections"),
-        "required_questions_passed": reader_counts.get("reader_review_questions"),
-        "producer": aids_review.get("producer"),
-        "reviewer": aids_review.get("reviewer"),
-        "status": aids_review.get("status"),
+        "review_dimensions": revision_counts.get("review_dimensions"),
+        "revision_cycle": acceptance.get("cycle_id"),
+        "applied_revisions": revision_counts.get("applied_revisions"),
+        "producer": acceptance.get("producer"),
+        "reviewer": acceptance.get("reviewer"),
+        "status": acceptance.get("status"),
     }
     for key, expected in expected_reader_value.items():
         if reader_value.get(key) != expected:
@@ -193,7 +208,8 @@ def validate_uncertainties(root: Path, errors: list[str]) -> dict[str, int]:
         errors.append("uncertain-items.jsonl is not the current open-material projection")
     active = module.active_decisions(decisions)
     high_open = sum(1 for row in active if row.get("status") == "open_material" and row.get("reader_impact") == "high")
-    return {"candidates": len(candidates), "adjudications": len(decisions),
+    cycles = {str(row.get("review_cycle")) for row in [*candidates, *decisions] if row.get("review_cycle")}
+    return {"review_cycles": len(cycles), "candidates": len(candidates), "adjudications": len(decisions),
             "active_adjudications": len(active), "open_material": len(open_items), "high_open": high_open}
 
 
@@ -320,7 +336,7 @@ def main() -> int:
         if not isinstance(summary, dict):
             errors.append("quality-report.json requires uncertainty_summary")
         else:
-            for key in ("candidates", "adjudications", "active_adjudications", "open_material"):
+            for key in ("review_cycles", "candidates", "adjudications", "active_adjudications", "open_material"):
                 if summary.get(key) != uncertainty_counts.get(key):
                     errors.append(f"quality-report uncertainty_summary.{key} mismatch")
         if grade == "A" and uncertainty_counts.get("open_material", 0):

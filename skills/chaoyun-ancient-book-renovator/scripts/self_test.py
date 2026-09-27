@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import subprocess
 import sys
@@ -49,7 +50,7 @@ def make_pdf(path: Path, pages: int = 1) -> None:
 def set_accepted_stages(workspace: Path) -> None:
     state_path = workspace / "run-state.json"
     state = json.loads(state_path.read_text(encoding="utf-8"))
-    for stage in ("intake", "diagnosis", "source", "source_adjudicated", "normalized", "modernized", "edited", "final_adjudicated"):
+    for stage in ("intake", "diagnosis", "source", "source_adjudicated", "normalized", "modernized", "edited", "reader_revised", "final_adjudicated"):
         state["stages"][stage]["status"] = "passed"
     write_json(state_path, state)
 
@@ -90,8 +91,9 @@ def editorial_report(workspace: Path, high_open: int = 0) -> None:
                 "core_entry_count": 1, "reader_review_sampled": 1,
             },
             "reader_value": {
-                "introduction_sections": 9, "required_questions_passed": 7,
-                "producer": "fixture-editor", "reviewer": "fixture-reader-reviewer",
+                "introduction_sections": 9, "review_dimensions": 9,
+                "revision_cycle": "RC0001", "applied_revisions": 1,
+                "producer": "fixture-reviser", "reviewer": "fixture-regression-reviewer",
                 "status": "passed",
             },
             "figures": {
@@ -119,15 +121,6 @@ def reader_aids(workspace: Path) -> None:
         "limitations_and_cautions": "It is a test fixture, not a historical edition.",
         "edition_method": "The source is retained and a labeled modern explanation is added.",
     }
-    questions = [
-        {"id": "what_is_book", "answerable": True, "answer_summary": "A one-page classical fixture.", "evidence_section": "what_this_book_is"},
-        {"id": "who_for", "answerable": True, "answer_summary": "A modern ordinary reader.", "evidence_section": "who_should_read"},
-        {"id": "contents_structure", "answerable": True, "answer_summary": "One source block and one explanation.", "evidence_section": "contents_and_structure"},
-        {"id": "reader_value", "answerable": True, "answer_summary": "It demonstrates traceable explanation.", "evidence_section": "reader_value"},
-        {"id": "how_to_read", "answerable": True, "answer_summary": "Read source, then explanation.", "evidence_section": "how_to_read"},
-        {"id": "limitations", "answerable": True, "answer_summary": "It is only a fixture.", "evidence_section": "limitations_and_cautions"},
-        {"id": "edition_changes", "answerable": True, "answer_summary": "It adds a labeled modern explanation.", "evidence_section": "edition_method"},
-    ]
     write_json(
         workspace / "50-edited/reader-aids.json",
         {
@@ -151,13 +144,52 @@ def reader_aids(workspace: Path) -> None:
                 }],
                 "excluded_inventory_terms": [],
             },
-            "reader_review": {
-                "producer": "fixture-editor", "reviewer": "fixture-reader-reviewer", "status": "passed",
-                "questions": questions,
-                "glossary_samples": [{"term": "天地", "plain_enough": True, "context_specific": True,
-                                      "example_helpful": True, "issue": None}],
-                "blocking_issues": [],
-            },
+        },
+    )
+
+
+def reader_revision(workspace: Path) -> None:
+    dimensions = {
+        name: {"verdict": "passed", "findings": []}
+        for name in (
+            "introduction_promise", "prerequisites", "navigation", "continuity", "terminology",
+            "examples_and_figures", "redundancy_and_pacing", "source_editor_trust", "closure_and_lookup",
+        )
+    }
+    dimensions["introduction_promise"] = {
+        "verdict": "needs_revision", "findings": ["The draft lacked a plain opening sentence."],
+    }
+    markdown = workspace / "50-edited/modern-reading.md"
+    write_json(
+        workspace / "50-edited/reader-review.json",
+        {
+            "schema_version": "1.0", "cycle_id": "RC0001", "mode": "manuscript",
+            "input_sha256": hashlib.sha256(b"fixture draft before reader revision").hexdigest(),
+            "target_reader": "modern ordinary reader", "reviewer": "fixture-reader-auditor",
+            "dimensions": dimensions,
+            "glossary_samples": [{"term": "天地", "plain_enough": True, "context_specific": True,
+                                  "example_helpful": True, "issue": None}],
+            "blocking_issues": ["RR000001"],
+        },
+    )
+    write_jsonl(workspace / "50-edited/reader-revision-ledger.jsonl", [{
+        "schema_version": "1.0", "event_id": "RRE000001", "revision_id": "RR000001",
+        "cycle_id": "RC0001", "operation": "add",
+        "reader_problem": "The draft lacked a plain opening sentence.",
+        "block_ids": ["P000001-B001"], "section": "本书介绍", "before": None,
+        "after": "这是一个单页测试读本。", "preservation": None,
+        "evidence": ["P000001-B001"], "semantic_risk": "low",
+        "uncertainty_candidate_id": None, "status": "applied",
+        "rationale": "Adds a plain reader orientation without changing the source claim.",
+    }])
+    write_json(
+        workspace / "50-edited/reader-acceptance-report.json",
+        {
+            "schema_version": "1.0", "cycle_id": "RC0001", "mode": "manuscript",
+            "producer": "fixture-reviser", "reviewer": "fixture-regression-reviewer", "status": "passed",
+            "output_sha256": hashlib.sha256(markdown.read_bytes()).hexdigest(),
+            "regression_review": "passed", "blocking_issues": [],
+            "counts": {"add": 1, "delete_from_reading_path": 0, "reorganize": 0, "rewrite": 0},
         },
     )
 
@@ -192,13 +224,15 @@ def main() -> int:
         write_json(workspace / "40-modernized/terminology.json", {"terms": [{"term": "天地"}]})
 
         candidates = [{
-            "schema_version": "1.1", "candidate_id": "UC000001", "page_id": "P000001",
+            "schema_version": "1.2", "candidate_id": "UC000001", "page_id": "P000001",
             "block_id": "P000001-B001", "origin_stage": "source", "kind": "glyph", "excerpt": "玄",
-            "reason": "fixture", "source_image": None, "severity": "low", "created_by": "self-test",
+            "reason": "fixture", "source_image": None, "severity": "low",
+            "review_cycle": "RC0001", "checkpoint": "source_reconstruction", "created_by": "self-test",
         }]
         decisions = [{
-            "schema_version": "1.1", "adjudication_id": "UA000001", "candidate_ids": ["UC000001"],
+            "schema_version": "1.2", "adjudication_id": "UA000001", "candidate_ids": ["UC000001"],
             "status": "resolved_confirmed", "reader_impact": "none", "active": True, "supersedes": None,
+            "review_cycle": "RC0001", "checkpoint": "source_reconstruction",
             "issue_id": None, "page_id": "P000001", "block_id": "P000001-B001",
             "rationale": "The fixture glyph is explicit.", "evidence": [], "before": None, "after": None,
             "reviewed_at": "2026-01-01T00:00:00Z", "reviewer": "self-test",
@@ -218,9 +252,10 @@ def main() -> int:
         make_pdf(candidate_pdf)
         run(str(INSTALL_PDF), str(workspace), str(candidate_pdf), "--expected-pages", "1")
         (workspace / "90-audit/quality-report.md").write_text("# Quality report\n", encoding="utf-8")
-        counts = {"candidates": 1, "adjudications": 1, "active_adjudications": 1, "open_material": 0}
+        counts = {"review_cycles": 1, "candidates": 1, "adjudications": 1, "active_adjudications": 1, "open_material": 0}
         quality_report(workspace, "A", counts)
         reader_aids(workspace)
+        reader_revision(workspace)
         editorial_report(workspace)
         run(str(HERE / "validate_workspace.py"), str(workspace), "--stage", "publication")
         run(str(PUBLISH_AUDIT), str(workspace))
@@ -235,6 +270,13 @@ def main() -> int:
             raise AssertionError("publication audit did not require editorial evidence")
         editorial_report(workspace)
 
+        acceptance_path = workspace / "50-edited/reader-acceptance-report.json"
+        acceptance_path.unlink()
+        missing_reader_acceptance = run(str(HERE / "validate_workspace.py"), str(workspace), "--stage", "publication", expect=1)
+        if "reader-acceptance-report.json" not in missing_reader_acceptance.stdout:
+            raise AssertionError("workspace validator did not require whole-book reader acceptance")
+        reader_revision(workspace)
+
         # Reader value must be proved item by item, not by self-reported totals.
         aids_path = workspace / "50-edited/reader-aids.json"
         aids = json.loads(aids_path.read_text(encoding="utf-8"))
@@ -247,13 +289,15 @@ def main() -> int:
 
         # A high-impact open item must make Grade B fail in both gates.
         candidates.append({
-            "schema_version": "1.1", "candidate_id": "UC000002", "page_id": "P000001",
-            "block_id": "P000001-B001", "origin_stage": "source", "kind": "missing", "excerpt": "黄",
-            "reason": "high-risk fixture", "source_image": None, "severity": "high", "created_by": "self-test",
+            "schema_version": "1.2", "candidate_id": "UC000002", "page_id": "P000001",
+            "block_id": "P000001-B001", "origin_stage": "reader_revised", "kind": "missing", "excerpt": "黄",
+            "reason": "high-risk fixture", "source_image": None, "severity": "high",
+            "review_cycle": "RC0002", "checkpoint": "whole_book_reader_revision", "created_by": "self-test",
         })
         decisions.append({
-            "schema_version": "1.1", "adjudication_id": "UA000002", "candidate_ids": ["UC000002"],
+            "schema_version": "1.2", "adjudication_id": "UA000002", "candidate_ids": ["UC000002"],
             "status": "open_material", "reader_impact": "high", "active": True, "supersedes": None,
+            "review_cycle": "RC0002", "checkpoint": "whole_book_reader_revision",
             "issue_id": "UI-UC000002", "page_id": "P000001", "block_id": "P000001-B001",
             "rationale": "A central glyph remains unreadable.", "evidence": [], "before": None, "after": None,
             "reviewed_at": "2026-01-01T00:00:01Z", "reviewer": "self-test",
@@ -261,7 +305,7 @@ def main() -> int:
         write_jsonl(candidate_path, candidates)
         write_jsonl(decision_path, decisions)
         run(str(PROJECT_OPEN), str(workspace))
-        quality_report(workspace, "B", {"candidates": 2, "adjudications": 2, "active_adjudications": 2, "open_material": 1})
+        quality_report(workspace, "B", {"review_cycles": 2, "candidates": 2, "adjudications": 2, "active_adjudications": 2, "open_material": 1})
         editorial_report(workspace, high_open=1)
         grade_failure = run(str(HERE / "validate_workspace.py"), str(workspace), "--stage", "publication", expect=1)
         if "grade B cannot contain high-impact" not in grade_failure.stdout:
@@ -273,15 +317,16 @@ def main() -> int:
         # A later decision supersedes rather than overwrites the first decision.
         decisions[-1]["active"] = False
         decisions.append({
-            "schema_version": "1.1", "adjudication_id": "UA000003", "candidate_ids": ["UC000002"],
+            "schema_version": "1.2", "adjudication_id": "UA000003", "candidate_ids": ["UC000002"],
             "status": "resolved_confirmed", "reader_impact": "none", "active": True, "supersedes": "UA000002",
+            "review_cycle": "RC0003", "checkpoint": "prepublication_recheck",
             "issue_id": None, "page_id": "P000001", "block_id": "P000001-B001",
             "rationale": "Independent evidence confirms the glyph.", "evidence": [], "before": None, "after": None,
             "reviewed_at": "2026-01-01T00:00:02Z", "reviewer": "self-test",
         })
         write_jsonl(decision_path, decisions)
         run(str(PROJECT_OPEN), str(workspace))
-        quality_report(workspace, "A", {"candidates": 2, "adjudications": 3, "active_adjudications": 2, "open_material": 0})
+        quality_report(workspace, "A", {"review_cycles": 3, "candidates": 2, "adjudications": 3, "active_adjudications": 2, "open_material": 0})
         editorial_report(workspace)
         run(str(HERE / "validate_workspace.py"), str(workspace), "--stage", "publication")
         run(str(PUBLISH_AUDIT), str(workspace))

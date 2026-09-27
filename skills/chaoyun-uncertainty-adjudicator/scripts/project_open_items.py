@@ -15,6 +15,14 @@ IMPACTS = {"none", "low", "medium", "high"}
 IMAGE_SUFFIXES = (".jpg", ".jpeg", ".png", ".tif", ".tiff", ".webp")
 
 
+def schema_12_or_later(value: object) -> bool:
+    try:
+        major, minor, *_ = (int(part) for part in str(value).split("."))
+        return (major, minor) >= (1, 2)
+    except (TypeError, ValueError):
+        return False
+
+
 def read_jsonl(path: Path) -> list[dict]:
     if not path.is_file():
         raise ValueError(f"missing {path}")
@@ -63,6 +71,10 @@ def validate(root: Path, candidates: list[dict], decisions: list[dict]) -> list[
     if source_path.is_file():
         source_blocks = {row.get("block_id"): row for row in read_jsonl(source_path) if row.get("block_id")}
     for row in candidates:
+        if schema_12_or_later(row.get("schema_version")):
+            for field in ("origin_stage", "review_cycle", "checkpoint", "created_by"):
+                if not str(row.get(field) or "").strip():
+                    errors.append(f"{row.get('candidate_id')} schema 1.2+ requires {field}")
         source_image = row.get("source_image")
         if source_image:
             image_path = (root / str(source_image)).resolve()
@@ -85,6 +97,10 @@ def validate(root: Path, candidates: list[dict], decisions: list[dict]) -> list[
     decision_map = {row.get("adjudication_id"): row for row in decisions if row.get("adjudication_id")}
     for row in decisions:
         decision_id = row.get("adjudication_id")
+        if schema_12_or_later(row.get("schema_version")):
+            for field in ("review_cycle", "checkpoint"):
+                if not str(row.get(field) or "").strip():
+                    errors.append(f"{decision_id} schema 1.2+ requires {field}")
         if row.get("status") not in STATUSES:
             errors.append(f"{decision_id} invalid status")
         if row.get("reader_impact") not in IMPACTS:
@@ -191,7 +207,8 @@ def main() -> int:
         candidates = []
         decisions = []
         expected = []
-    result = {"valid": not errors, "candidates": len(candidates), "adjudications": len(decisions), "active_adjudications": len(active_decisions(decisions)), "open_material": len(expected), "errors": errors}
+    cycles = sorted({str(row.get("review_cycle")) for row in [*candidates, *decisions] if row.get("review_cycle")})
+    result = {"valid": not errors, "review_cycles": len(cycles), "candidates": len(candidates), "adjudications": len(decisions), "active_adjudications": len(active_decisions(decisions)), "open_material": len(expected), "errors": errors}
     print(json.dumps(result, ensure_ascii=False, indent=2))
     return 0 if not errors else 1
 

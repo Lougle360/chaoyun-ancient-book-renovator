@@ -55,18 +55,6 @@ Create `50-edited/reader-aids.json`. The summary counts in `editorial-report.jso
     "excluded_inventory_terms": [
       {"term": "非正文标记", "reason": "Stamp or pipeline label, not a reader term."}
     ]
-  },
-  "reader_review": {
-    "producer": "editor-or-model-id",
-    "reviewer": "independent-reviewer-id",
-    "status": "passed",
-    "questions": [
-      {"id": "what_is_book", "answerable": true, "answer_summary": "The reader's answer in plain language.", "evidence_section": "what_this_book_is"}
-    ],
-    "glossary_samples": [
-      {"term": "示例术语", "plain_enough": true, "context_specific": true, "example_helpful": true, "issue": null}
-    ],
-    "blocking_issues": []
   }
 }
 ```
@@ -89,8 +77,4 @@ The introduction must let the target reader answer: What is this book? What does
 - A single-character match, contents-page mention, or substring collision is not automatically the first substantive occurrence. Verify it against the linked block.
 - In the rendered book, explain a term at first reader-facing use as well as in the end glossary.
 
-## Independent reader review
-
-The producer and reviewer identifiers must differ and represent separate review passes. The reviewer answers at least these question IDs: `what_is_book`, `who_for`, `contents_structure`, `reader_value`, `how_to_read`, `limitations`, and `edition_changes`; each answer includes a plain-language answer summary, not only a boolean. Sample at least the lesser of ten glossary entries or all entries, always including every core term when there are ten or fewer. Each sampled term explicitly passes plain-language clarity, book-specific context, and example usefulness, or records a blocking issue.
-
-Publication is blocked when any required question is not answerable, a sampled definition remains circular or specialist-dependent, evidence links fail, or `blocking_issues` is nonempty. A structural validator can catch missing evidence and inconsistent claims; the independent pass is responsible for usefulness and clarity.
+After this file validates, `$chaoyun-reader-experience-reviser` performs the independent whole-book reading pass, glossary sampling, revision loop, and final reader acceptance. Production evidence and acceptance evidence remain separate.

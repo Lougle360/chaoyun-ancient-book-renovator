@@ -51,9 +51,15 @@
 - Traditional causal or predictive claims are attributed as historical/source claims and remain distinct from directly observable descriptions.
 - OCR corruption, missing text, and uncertain reading order are returned to reconstruction rather than polished into fluent prose.
 - `editorial-report.json` records the evidence used for the book-nature statement, source contents reconstruction, contextual glossary, content-figure guidance, and semantic status.
-- `reader-aids.json` supplies the item-level evidence for the introduction and every glossary entry. Its validator passes, its counts match `editorial-report.json`, and a distinct reader reviewer answers every required reader question.
+- `reader-aids.json` supplies item-level introduction and glossary evidence. The whole-book reader revision ledger and acceptance report pass independently, and all derived counts match `editorial-report.json`.
 - Printed page numbers are not mapped to physical PDF pages by offset assumption; the mapping is verified against page images or explicit page records.
 - Reader text contains no model verdicts, candidate fields, repair-queue text, pipeline states, or internal validation messages.
+
+## G5.5 Whole-book reader revision
+
+- `$chaoyun-reader-experience-reviser` reads the complete manuscript before editing, records reader obstacles across all nine dimensions, and applies traceable `add`, `delete_from_reading_path`, `rewrite`, or `reorganize` operations.
+- Deletion from the reading path preserves source material and provenance. Medium/high semantic-risk revisions enter the unified uncertainty lifecycle.
+- A fresh regression reviewer differs from the revision producer. The acceptance hash matches the final manuscript, no proposed or returned revision remains unresolved, and glossary sampling passes.
 
 ## G6 Publication
 

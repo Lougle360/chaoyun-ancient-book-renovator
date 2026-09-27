@@ -19,6 +19,7 @@ STAGES = [
     "normalized",
     "modernized",
     "edited",
+    "reader_revised",
     "final_adjudicated",
     "publication",
 ]
@@ -98,7 +99,7 @@ def main() -> int:
         output / "book.json",
         {
             "schema_version": "1.0",
-            "workflow_schema_version": "1.2",
+            "workflow_schema_version": "1.3",
             "book_id": book_id,
             "title": source.stem,
             "edition_label": args.edition_label,
@@ -115,7 +116,7 @@ def main() -> int:
         output / "run-state.json",
         {
             "schema_version": "1.0",
-            "workflow_schema_version": "1.2",
+            "workflow_schema_version": "1.3",
             "book_id": book_id,
             "updated_at": now,
             "stages": {stage: {"status": "pending"} for stage in STAGES},

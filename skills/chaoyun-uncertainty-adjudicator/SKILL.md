@@ -1,11 +1,13 @@
 ---
 name: chaoyun-uncertainty-adjudicator
-description: Adjudicate OCR, layout, glyph, translation, and collation uncertainties in a Chaoyun ancient-book workspace. Use after source reconstruction and again before publication to separate true reader-impacting defects from stamps, cross-page continuations, duplicates, confirmed variants, and editorial notes.
+description: Adjudicate OCR, layout, glyph, translation, reader-edit, proof, and collation uncertainties through unlimited review cycles in a Chaoyun ancient-book workspace. Use at any evidence or reader checkpoint to separate true reader-impacting defects from stamps, cross-page continuations, duplicates, confirmed variants, and editorial notes.
 ---
 
 # 超云古书疑点裁决
 
 Turn raw model doubts into a traceable, reader-safe uncertainty ledger. Do not treat every model warning as missing source text.
+
+This is one lifecycle with unlimited checkpoints, not separate first, second, or final doubt lists. Each new pass uses a stable `review_cycle` and `checkpoint`; all cycles append to the same candidate and adjudication history.
 
 ## Required separation
 
@@ -20,18 +22,19 @@ For an older workspace, run `python scripts/migrate_legacy_ledger.py <workspace>
 ## Adjudication workflow
 
 1. Group candidates that point to the same page region or phrase. Preserve every `candidate_id` in the grouped decision.
-2. Inspect the source image, page layout, adjacent pages, other recognition passes, and established variant-character or terminology evidence. A fluent sentence is not transcription evidence.
-3. Assign exactly one status:
+2. Record `origin_stage`, `review_cycle`, `checkpoint`, and `introduced_by` for every new-schema candidate. Examples of checkpoints include source reconstruction, normalization, modernization, whole-book reader revision, proof review, and prepublication audit.
+3. Inspect the source image, page layout, adjacent pages, other recognition passes, and established variant-character or terminology evidence. A fluent sentence is not transcription evidence.
+4. Assign exactly one status:
    - `resolved_confirmed`: the reading is supported by visible or documentary evidence.
    - `resolved_noncontent`: stamp, page header, folio mark, bleed-through, border, or other nonbody material.
    - `resolved_structural`: cross-page continuation, reading-order relation, caption association, or editorial explanation rather than an unread glyph.
    - `resolved_duplicate`: merged into another decision; retain the linked candidate IDs.
    - `open_material`: the source still does not support a unique reading or the missing passage is real.
-4. Record `reader_impact` as `none`, `low`, `medium`, or `high`. A doubt about an unused colophon name is not equivalent to a missing doctrinal sentence.
-5. Apply a source correction only for `resolved_confirmed`, recording exact before/after text and evidence. Do not repair source text from meaning alone.
-6. Project only `open_material` decisions into `uncertain-items.jsonl`. Merge repeated reports into one intelligible note and state whether ordinary reading is affected.
-7. When revising a decision, append a new active adjudication with `supersedes` and mark the previous record `active: false`. Never rewrite the old rationale. Every active `open_material` decision keeps a stable `issue_id` across revisions.
-8. Run `scripts/project_open_items.py <workspace> --check`. Before publication, run it without `--check` once to regenerate the open-item projection atomically, then check again.
+5. Record `reader_impact` as `none`, `low`, `medium`, or `high`. A doubt about an unused colophon name is not equivalent to a missing doctrinal sentence.
+6. Apply a source correction only for `resolved_confirmed`, recording exact before/after text and evidence. Do not repair source text from meaning alone.
+7. Project only `open_material` decisions into `uncertain-items.jsonl`. Merge repeated reports into one intelligible note and state whether ordinary reading is affected.
+8. When revising a decision in any later cycle, append a new active adjudication with `supersedes` and mark the previous record `active: false`. Never rewrite the old rationale. Every active `open_material` decision keeps a stable `issue_id` across revisions.
+9. Run `scripts/project_open_items.py <workspace> --check` after every checkpoint. Before publication, run it without `--check` once to regenerate the open-item projection atomically, then check again.
 
 Read [references/adjudication-contract.md](references/adjudication-contract.md) when creating or validating records.
 

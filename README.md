@@ -39,10 +39,11 @@ chaoyun-ancient-book-renovator
    ├─ chaoyun-ancient-book-renovator   # 总控与质量门
    ├─ chaoyun-pdf-diagnoser            # PDF 诊断和页面路由
    ├─ chaoyun-source-reconstructor      # 原书重建与证据记录
-   ├─ chaoyun-uncertainty-adjudicator   # 疑点归并、裁决和读者影响分级
+   ├─ chaoyun-uncertainty-adjudicator   # 全流程多轮疑点归并、裁决和影响分级
    ├─ chaoyun-text-normalizer           # 繁简、异体字、标点与分段
    ├─ chaoyun-classical-modernizer      # 文言文、日文到现代中文
    ├─ chaoyun-reading-editor            # 普通读者版编辑
+   ├─ chaoyun-reader-experience-reviser # 全书读者审编与增删改整
    └─ chaoyun-quality-publisher         # 独立审计与正式出版
 ```
 
@@ -54,7 +55,7 @@ $chaoyun-ancient-book-renovator
 
 ## 安装
 
-将仓库中的八个 Skill 目录复制到 Codex Skill 目录：
+将仓库中的九个 Skill 目录复制到 Codex Skill 目录：
 
 ```powershell
 git clone https://github.com/Lougle360/chaoyun-ancient-book-renovator.git
@@ -101,7 +102,9 @@ Copy-Item -Recurse -Force ".\skills\chaoyun-*" $target
         ↓
 普通读者编辑、导读、图解和术语表
         ↓
-再次裁决翻译与编辑疑点
+全书读者审编，执行增删改整
+        ↓
+按检查点循环裁决所有新增疑点
         ↓
 独立语义审计与结构审计
         ↓
@@ -110,7 +113,7 @@ Copy-Item -Recurse -Force ".\skills\chaoyun-*" $target
 
 ## 质量等级
 
-- **A — 可正式出版**：所有质量门通过，没有高风险疑难。
+- **A — 可正式出版**：所有质量门通过，没有当前有效的实质未决疑点。
 - **B — 可直接阅读，保留台账**：存在范围明确、不会破坏整体阅读的疑难项。
 - **C — 辅助草稿**：仍有重要版式、识别或翻译风险，不得标成完整版。
 - **D — 无法可靠恢复**：现有证据不足以负责任地完成转换。
@@ -149,6 +152,7 @@ book-workspace/
 python .\skills\chaoyun-ancient-book-renovator\scripts\self_test.py
 python .\skills\chaoyun-ancient-book-renovator\scripts\validate_workspace.py <book-workspace> --stage publication
 python .\skills\chaoyun-reading-editor\scripts\validate_reader_value.py <book-workspace>
+python .\skills\chaoyun-reader-experience-reviser\scripts\validate_reader_revision.py <book-workspace>
 python .\skills\chaoyun-uncertainty-adjudicator\scripts\project_open_items.py <book-workspace> --check
 python .\skills\chaoyun-quality-publisher\scripts\audit_publication.py <book-workspace>
 ```

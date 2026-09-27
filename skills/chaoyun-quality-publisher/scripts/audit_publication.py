@@ -52,7 +52,9 @@ def main() -> int:
     ordinary_reader = "普通" in target_reader or "ordinary" in target_reader.lower() or "现代白话" in edition_label
     editorial_path = root / "50-edited/editorial-report.json"
     editorial_data: dict = {}
+    acceptance_data: dict = {}
     reader_counts: dict[str, int] = {}
+    revision_counts: dict[str, int] = {}
     if ordinary_reader:
         if not editorial_path.is_file():
             errors.append("ordinary-reader edition requires 50-edited/editorial-report.json")
@@ -76,6 +78,24 @@ def main() -> int:
                 spec.loader.exec_module(module)
                 reader_errors, reader_counts = module.validate(root, "60-publication/modern-reading.md")
                 errors.extend(reader_errors)
+        revision_validator = Path(__file__).resolve().parents[2] / "chaoyun-reader-experience-reviser" / "scripts" / "validate_reader_revision.py"
+        if not revision_validator.is_file():
+            errors.append("missing chaoyun-reader-experience-reviser validator")
+        else:
+            revision_spec = importlib.util.spec_from_file_location("chaoyun_reader_revision_audit", revision_validator)
+            if revision_spec is None or revision_spec.loader is None:
+                errors.append("could not load reader-revision validator")
+            else:
+                revision_module = importlib.util.module_from_spec(revision_spec)
+                revision_spec.loader.exec_module(revision_module)
+                revision_errors, revision_counts = revision_module.validate(root)
+                errors.extend(revision_errors)
+        acceptance_path = root / "50-edited/reader-acceptance-report.json"
+        if acceptance_path.is_file():
+            try:
+                acceptance_data = json.loads(acceptance_path.read_text(encoding="utf-8"))
+            except (json.JSONDecodeError, OSError) as exc:
+                errors.append(f"invalid reader-acceptance-report.json: {exc}")
 
     publication = report_data.get("publication")
     publication = publication if isinstance(publication, dict) else {}
@@ -197,10 +217,24 @@ def main() -> int:
                 ("entry_count", "glossary_entries"),
                 ("entries_with_first_occurrence", "glossary_with_first_occurrence"),
                 ("core_entry_count", "glossary_core"),
-                ("reader_review_sampled", "glossary_sampled"),
             ):
                 if glossary_report.get(report_key) != reader_counts.get(count_key):
                     errors.append(f"editorial-report glossary.{report_key} does not match reader-aids.json")
+            if glossary_report.get("reader_review_sampled") != revision_counts.get("glossary_sampled"):
+                errors.append("editorial-report glossary.reader_review_sampled does not match whole-book reader review")
+            reader_value = editorial_data.get("reader_value")
+            reader_value = reader_value if isinstance(reader_value, dict) else {}
+            for key, expected in {
+                "introduction_sections": reader_counts.get("introduction_sections"),
+                "review_dimensions": revision_counts.get("review_dimensions"),
+                "revision_cycle": acceptance_data.get("cycle_id"),
+                "applied_revisions": revision_counts.get("applied_revisions"),
+                "producer": acceptance_data.get("producer"),
+                "reviewer": acceptance_data.get("reviewer"),
+                "status": acceptance_data.get("status"),
+            }.items():
+                if reader_value.get(key) != expected:
+                    errors.append(f"editorial-report reader_value.{key} does not match reader acceptance")
             semantic_review = editorial_data.get("semantic_review")
             semantic_review = semantic_review if isinstance(semantic_review, dict) else {}
             if semantic_review.get("high_impact_open") != high_open:

@@ -60,11 +60,12 @@ def main() -> int:
         candidate_id = stable_id("UC", item)
         candidate_by_original[key] = candidate_id
         candidates.append({
-            "schema_version": "1.1", "candidate_id": candidate_id,
+            "schema_version": "1.2", "candidate_id": candidate_id,
             "page_id": item.get("page_id"), "block_id": item.get("block_id"),
             "origin_stage": "legacy", "kind": "glyph", "excerpt": item.get("excerpt"),
             "reason": item.get("note") or item.get("reason") or "legacy uncertainty",
             "source_image": item.get("source_image"), "severity": item.get("severity", "medium"),
+            "review_cycle": "RC-LEGACY-0001", "checkpoint": "legacy_migration",
             "created_by": "legacy-migration",
         })
 
@@ -78,17 +79,18 @@ def main() -> int:
                 candidate_id = stable_id("UC", original)
                 candidate_by_original[key] = candidate_id
                 candidates.append({
-                    "schema_version": "1.1", "candidate_id": candidate_id,
+                    "schema_version": "1.2", "candidate_id": candidate_id,
                     "page_id": original.get("page_id"), "block_id": original.get("block_id"),
                     "origin_stage": "review_discovery", "kind": "missing",
                     "excerpt": None, "reason": row.get("rationale") or "review-discovered issue",
                     "source_image": original.get("source_image"), "severity": "medium",
+                    "review_cycle": "RC-LEGACY-0001", "checkpoint": "legacy_migration",
                     "created_by": "legacy-migration",
                 })
             status = row.get("status")
             decision_id = stable_id("UA", {"legacy_id": row.get("adjudication_id"), "candidate_id": candidate_id, "row": row})
             decisions.append({
-                "schema_version": "1.1", "adjudication_id": decision_id,
+                "schema_version": "1.2", "adjudication_id": decision_id,
                 "candidate_ids": [candidate_id], "status": status,
                 "reader_impact": impact(original.get("severity")) if status == "open_material" else "none",
                 "issue_id": "UI-" + candidate_id if status == "open_material" else None,
@@ -96,6 +98,7 @@ def main() -> int:
                 "rationale": row.get("rationale") or "Migrated legacy adjudication.",
                 "evidence": [original["source_image"]] if original.get("source_image") else [],
                 "before": None, "after": None, "active": True, "supersedes": None,
+                "review_cycle": "RC-LEGACY-0001", "checkpoint": "legacy_migration",
                 "reviewed_at": row.get("reviewed_at") or datetime.now(timezone.utc).isoformat(),
                 "reviewer": row.get("reviewer") or "legacy-migration",
             })

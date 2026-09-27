@@ -13,10 +13,6 @@ INTRO_KEYS = {
     "distinctive_features", "historical_and_textual_context", "how_to_read",
     "limitations_and_cautions", "edition_method",
 }
-REVIEW_QUESTIONS = {
-    "what_is_book", "who_for", "contents_structure", "reader_value",
-    "how_to_read", "limitations", "edition_changes",
-}
 TIERS = {"core", "supporting", "opaque"}
 CONFIDENCE = {"confirmed", "qualified", "unresolved"}
 
@@ -145,44 +141,11 @@ def validate(root: Path, markdown_relative: str = "50-edited/modern-reading.md")
     if missing_inventory:
         errors.append(f"terminology inventory is not fully adjudicated for readers: {missing_inventory}")
 
-    review = aids.get("reader_review") if isinstance(aids.get("reader_review"), dict) else {}
-    producer = str(review.get("producer") or "").strip()
-    reviewer = str(review.get("reviewer") or "").strip()
-    if not producer or not reviewer or producer == reviewer:
-        errors.append("reader review requires distinct producer and reviewer identities")
-    if review.get("status") != "passed" or review.get("blocking_issues"):
-        errors.append("reader review has not passed without blocking issues")
-    questions = review.get("questions") if isinstance(review.get("questions"), list) else []
-    passed_questions = {
-        item.get("id") for item in questions
-        if isinstance(item, dict) and item.get("answerable") is True
-        and str(item.get("answer_summary") or "").strip()
-        and item.get("evidence_section") in INTRO_KEYS
-    }
-    if REVIEW_QUESTIONS - passed_questions:
-        errors.append(f"reader review questions not passed: {sorted(REVIEW_QUESTIONS - passed_questions)}")
-    samples = review.get("glossary_samples") if isinstance(review.get("glossary_samples"), list) else []
-    sampled = {
-        str(item.get("term")) for item in samples
-        if isinstance(item, dict) and item.get("term")
-        and item.get("plain_enough") is True
-        and item.get("context_specific") is True
-        and item.get("example_helpful") is True
-        and not str(item.get("issue") or "").strip()
-    }
-    required_sample = min(10, len(terms))
-    if len(sampled & terms) < required_sample:
-        errors.append(f"reader review sampled too few glossary terms: {len(sampled & terms)}/{required_sample}")
-    if len(core_terms) <= 10 and not core_terms.issubset(sampled):
-        errors.append("reader review must sample every core term when there are ten or fewer")
-
     counts = {
         "introduction_sections": len([key for key in INTRO_KEYS if str(sections.get(key) or "").strip()]),
         "glossary_entries": len(terms),
         "glossary_core": len(core_terms),
         "glossary_with_first_occurrence": sum(1 for entry in entries if isinstance(entry, dict) and isinstance(entry.get("first_occurrence"), dict) and entry["first_occurrence"].get("block_id") in source),
-        "reader_review_questions": len(passed_questions),
-        "glossary_sampled": len(sampled & terms),
     }
     return errors, counts
 

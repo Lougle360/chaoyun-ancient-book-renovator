@@ -27,6 +27,9 @@ book-workspace/
 |   |-- modern-reading.md
 |   |-- blocks.jsonl
 |   |-- reader-aids.json
+|   |-- reader-review.json
+|   |-- reader-revision-ledger.jsonl
+|   |-- reader-acceptance-report.json
 |   `-- editorial-report.json
 |-- 60-publication/
 |   |-- modern-reading.md
@@ -45,7 +48,7 @@ book-workspace/
 
 Files appear only when their stage runs. Do not create fake empty outputs to satisfy the layout.
 
-For an ordinary-reader edition, `50-edited/reader-aids.json` and `50-edited/editorial-report.json` are required before publication. The reader-aids file is the item-level evidence source; the editorial report is a derived summary and may not self-certify counts. Its schema and evidence rules are defined in [editorial-evidence-contract.md](editorial-evidence-contract.md). Supplemental PDFs stay below `60-publication/supplements/`; the publication root contains only the single declared official reader PDF and an optional exact internal alias.
+For an ordinary-reader edition, `50-edited/reader-aids.json`, the three whole-book reader-review artifacts, and `50-edited/editorial-report.json` are required before publication. The reader-aids file and revision ledger are item-level evidence sources; the editorial report is a derived summary and may not self-certify counts. Its schema and evidence rules are defined in [editorial-evidence-contract.md](editorial-evidence-contract.md). Supplemental PDFs stay below `60-publication/supplements/`; the publication root contains only the single declared official reader PDF and an optional exact internal alias.
 
 ## Edition and release metadata
 
@@ -106,4 +109,4 @@ Required values may be `null` before their stage, never fabricated. `bbox` is in
 
 `90-audit/events.jsonl` is append-only. Every automatic correction, translation acceptance, exclusion, manual override, and gate result records actor/tool, time, source IDs, before/after values, confidence, and rationale. Secrets and full API credentials must never appear in any artifact.
 
-Uncertainty has three distinct views. `uncertainty-candidates.jsonl` preserves raw model and reviewer candidates. `uncertainty-adjudication.jsonl` groups them and records one of `resolved_confirmed`, `resolved_noncontent`, `resolved_structural`, `resolved_duplicate`, or `open_material`, plus reader impact and evidence. Revisions append a new decision using `supersedes`; only one active decision may cover each candidate. `uncertain-items.jsonl` is an atomically generated projection containing only active `open_material` decisions with stable issue IDs. Read the `$chaoyun-uncertainty-adjudicator` contract before creating these records.
+Uncertainty has three distinct views. `uncertainty-candidates.jsonl` preserves raw model and reviewer candidates. `uncertainty-adjudication.jsonl` groups them and records one of `resolved_confirmed`, `resolved_noncontent`, `resolved_structural`, `resolved_duplicate`, or `open_material`, plus reader impact and evidence. All stages use the same ledgers through unlimited `review_cycle` and `checkpoint` values; do not create separate first-, second-, or final-doubt files. Revisions append a new decision using `supersedes`; only one active decision may cover each candidate. `uncertain-items.jsonl` is an atomically generated projection containing only active `open_material` decisions with stable issue IDs. Read the `$chaoyun-uncertainty-adjudicator` contract before creating these records.
