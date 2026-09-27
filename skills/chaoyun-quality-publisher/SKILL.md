@@ -28,6 +28,7 @@ Use [references/publication-package.md](references/publication-package.md) for o
 - Verify clickable TOC targets, PDF bookmarks, heading levels, page breaks, figures, captions, tables, footnotes, links, selectable text, and rendered pages.
 - Inspect every rendered page for short books and all anomaly pages plus stratified samples for long books. Blank overflow pages, raw markup, orphan fragments, unexplained crops, and pages with extreme whitespace are defects, not stylistic choices.
 - Keep exactly one unambiguous official release artifact in the publication root. Archive or clearly label superseded drafts. If a file lock forces a versioned working filename, restore the declared official name before delivery.
+- Treat `book.json.release_filename` as canonical. `quality-report.json` must name the same file; a versioned fallback cannot pass the publication audit as the official release.
 - Write `90-audit/quality-report.json` and a human-readable quality report.
 
 Run the deterministic package audit:

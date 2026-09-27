@@ -44,7 +44,14 @@ def main() -> int:
 
     publication = report_data.get("publication")
     publication = publication if isinstance(publication, dict) else {}
-    declared_pdf = publication.get("pdf") or book_data.get("release_filename")
+    book_declared_pdf = book_data.get("release_filename")
+    report_declared_pdf = publication.get("pdf")
+    if book_declared_pdf and report_declared_pdf and str(book_declared_pdf).replace("\\", "/") != str(report_declared_pdf).replace("\\", "/"):
+        errors.append(
+            "quality report PDF differs from book.json.release_filename; "
+            f"got {report_declared_pdf!r}/{book_declared_pdf!r}"
+        )
+    declared_pdf = book_declared_pdf or report_declared_pdf
     if declared_pdf:
         pdf = (root / str(declared_pdf)).resolve()
     else:

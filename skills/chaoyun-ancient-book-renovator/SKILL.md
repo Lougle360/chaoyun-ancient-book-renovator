@@ -37,17 +37,19 @@ When the user asks for “普通人可以直接阅读” or equivalent, use the 
 
 3. Use `$chaoyun-pdf-diagnoser` to create the book profile and page-level route map. Read [references/routing.md](references/routing.md) when layouts or languages are mixed.
 4. Use `$chaoyun-source-reconstructor` to create the faithful source Markdown and page/block records. Do not proceed if source coverage or reading order fails its gate.
-5. Use `$chaoyun-text-normalizer` for script conversion, variant-character policy, punctuation, and segmentation. This stage must not paraphrase.
-6. Use `$chaoyun-classical-modernizer` for classical Chinese-to-modern Chinese and Japanese-to-modern Chinese. Route mixed-language blocks separately.
-7. Use `$chaoyun-reading-editor` to build the declared reader edition, including its reading route, chapter guidance, first-use terminology, figure guidance, and glossary where appropriate, while keeping editor-created material explicitly labeled.
-8. Use `$chaoyun-quality-publisher` for independent semantic checks, formal front matter, official release naming, package audit, and Markdown/PDF production.
-9. Run the deterministic contract validator:
+5. Use `$chaoyun-uncertainty-adjudicator` to preserve raw candidates, merge duplicate reports, separate nonbody/structural issues from true source ambiguity, and create the first material open-item projection. Do not send an unreviewed model-warning list directly to readers.
+6. Use `$chaoyun-text-normalizer` for script conversion, variant-character policy, punctuation, and segmentation. This stage must not paraphrase.
+7. Use `$chaoyun-classical-modernizer` for classical Chinese-to-modern Chinese and Japanese-to-modern Chinese. Route mixed-language blocks separately.
+8. Use `$chaoyun-reading-editor` to build the declared reader edition, including its reading route, chapter guidance, first-use terminology, figure guidance, and glossary where appropriate, while keeping editor-created material explicitly labeled.
+9. Run `$chaoyun-uncertainty-adjudicator` again to include translation and editorial findings. The reader-facing ledger must contain only current `open_material` decisions, with reader impact and evidence.
+10. Use `$chaoyun-quality-publisher` for independent semantic checks, formal front matter, official release naming, package audit, and Markdown/PDF production. Detect whether the declared PDF path is open or locked before rendering; write a temporary artifact and atomically replace the official file only after validation. Never silently publish a differently named second “official” PDF.
+11. Run the deterministic contract validator:
 
    ```shell
    python scripts/validate_workspace.py output-directory --stage publication
    ```
 
-10. Report the achieved grade, source-page accounting, reader-facing PDF page count, unresolved items, and the single official release path. Never call a run complete merely because files exist.
+12. Report the achieved grade, source-page accounting, reader-facing PDF page count, raw candidate count, adjudicated count, material unresolved count, and the single official release path. Never call a run complete merely because files exist.
 
 For scan-heavy books, do not publish a full-book reading edition until every included source page has page-level visual evidence or an explicit `unreadable` / `noncontent` disposition. Text-only judging against inherited OCR is not an independent semantic check. The contract validator and publication auditor must both exit successfully; a hand-written `passed_with_ledger` state cannot override either failure.
 
@@ -59,6 +61,7 @@ For scan-heavy books, do not publish a full-book reading edition until every inc
 - Support resume from the last completed stage. A retry must not duplicate accepted records.
 - Before a paid full-book run, estimate pages/cost and obtain authorization. A representative sample is not authorization for the full corpus.
 - Keep samples and full-book artifacts in visibly different paths and filenames. A sample may validate routing and quality, but it is never proof that the complete book was converted. Never label a partial, C-grade, or validation-failing artifact as `完整版`, `final`, or publication-ready.
+- Keep uncertainty candidates, adjudications, and reader-facing open items distinct. A resolved stamp, variant character, cross-page continuation, semantic comment, or duplicate must remain traceable in history but must not inflate the published uncertainty count.
 - Stop on corrupt/encrypted input, missing pages, materially ambiguous reading order, systematic language misclassification, or budget exhaustion. Record the exact blocker.
 
 ## Completion grades

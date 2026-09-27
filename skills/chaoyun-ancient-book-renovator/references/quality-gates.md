@@ -18,6 +18,15 @@
 - Every logical page and content block is accounted for.
 - Reading order, headings, notes, images, captions, and tables are checked against page images.
 - OCR uncertainties remain visible; fluent inference is not accepted as transcription evidence.
+- Raw uncertainty candidates have stable IDs and preserve source-image evidence; they are not yet treated as reader-facing defects.
+
+## G2.5 Uncertainty adjudication
+
+- Every raw candidate belongs to exactly one adjudication; repeated reports may be grouped without deleting their IDs.
+- Each decision is classified as confirmed, noncontent, structural, duplicate, or materially open, with explicit reader impact.
+- Confirmed source corrections include before/after text and evidence. Meaning alone is not sufficient to repair a glyph.
+- The reader-facing ledger is regenerated from `open_material` decisions only and contains no resolved stamp, variant, cross-page, semantic-comment, or duplicate record.
+- Candidate count, adjudicated count, and material-open count are reported separately.
 
 ## G3 Normalization
 
@@ -47,6 +56,7 @@
 - Both reading edition and source-comparison edition are generated when source evidence permits.
 - PDF fonts embed correctly; headings, TOC, page breaks, images, and Chinese/Japanese glyphs render.
 - The quality report lists coverage, grade, models/tools, cost, unresolved items, and limitations.
+- The declared release path is checked for locks before generation. A temporary PDF is validated before atomic replacement; a lock may block replacement but must not create a second ambiguous official release.
 - The release includes the declared cover, copyright/credits page, author/editor/producer credits, clickable TOC, and PDF bookmarks.
 - `release_filename` exists, matches the declared book title and edition label, and is the single unambiguous official PDF.
 - Link targets and local assets are validated programmatically. Every rendered page is inspected for short and medium books; long books receive full anomaly checks and stratified visual inspection.

@@ -34,6 +34,8 @@ book-workspace/
 |   `-- source-comparison.pdf
 `-- 90-audit/
     |-- events.jsonl
+    |-- uncertainty-candidates.jsonl
+    |-- uncertainty-adjudication.jsonl
     |-- uncertain-items.jsonl
     `-- quality-report.json
 ```
@@ -98,3 +100,5 @@ Required values may be `null` before their stage, never fabricated. `bbox` is in
 ## Audit rules
 
 `90-audit/events.jsonl` is append-only. Every automatic correction, translation acceptance, exclusion, manual override, and gate result records actor/tool, time, source IDs, before/after values, confidence, and rationale. Secrets and full API credentials must never appear in any artifact.
+
+Uncertainty has three distinct views. `uncertainty-candidates.jsonl` preserves raw model and reviewer candidates. `uncertainty-adjudication.jsonl` groups them and records one of `resolved_confirmed`, `resolved_noncontent`, `resolved_structural`, `resolved_duplicate`, or `open_material`, plus reader impact and evidence. `uncertain-items.jsonl` is a reproducible projection containing only current `open_material` decisions. Read the `$chaoyun-uncertainty-adjudicator` contract before creating these records.

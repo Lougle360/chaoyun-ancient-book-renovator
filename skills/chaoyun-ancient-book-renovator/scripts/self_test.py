@@ -14,10 +14,14 @@ from pypdf import PdfWriter
 
 HERE = Path(__file__).resolve().parent
 PUBLISH_AUDIT = HERE.parent.parent / "chaoyun-quality-publisher" / "scripts" / "audit_publication.py"
+PROJECT_OPEN = HERE.parent.parent / "chaoyun-uncertainty-adjudicator" / "scripts" / "project_open_items.py"
 
 
 def run(*args: str, expect: int = 0) -> subprocess.CompletedProcess[str]:
-    result = subprocess.run([sys.executable, *args], text=True, capture_output=True, encoding="utf-8")
+    result = subprocess.run(
+        [sys.executable, *args], text=True, capture_output=True,
+        encoding="utf-8", errors="replace",
+    )
     if result.returncode != expect:
         raise AssertionError(f"expected {expect}, got {result.returncode}: {result.stdout}\n{result.stderr}")
     return result
@@ -74,6 +78,23 @@ def main() -> int:
         ]:
             (workspace / relative).write_text(json.dumps(record, ensure_ascii=False) + "\n", encoding="utf-8")
 
+        candidate = {
+            "schema_version": "1.0", "candidate_id": "UC000001", "page_id": "P000001",
+            "block_id": "P000001-B001", "origin_stage": "source", "kind": "glyph",
+            "excerpt": "玄", "reason": "fixture", "source_image": None,
+            "severity": "low", "created_by": "self-test",
+        }
+        decision = {
+            "schema_version": "1.0", "adjudication_id": "UA000001", "candidate_ids": ["UC000001"],
+            "status": "resolved_confirmed", "reader_impact": "none", "page_id": "P000001",
+            "block_id": "P000001-B001", "rationale": "The fixture glyph is explicit.", "evidence": [],
+            "before": None, "after": None, "reviewed_at": "2026-01-01T00:00:00Z", "reviewer": "self-test",
+        }
+        (workspace / "90-audit/uncertainty-candidates.jsonl").write_text(json.dumps(candidate, ensure_ascii=False) + "\n", encoding="utf-8")
+        (workspace / "90-audit/uncertainty-adjudication.jsonl").write_text(json.dumps(decision, ensure_ascii=False) + "\n", encoding="utf-8")
+        run(str(PROJECT_OPEN), str(workspace))
+        run(str(PROJECT_OPEN), str(workspace), "--check")
+
         publication = workspace / "60-publication"
         (publication / "modern-reading.md").write_text("# 测试\n\n天是玄色的。\n", encoding="utf-8")
         release_pdf = publication / "source·现代白话版.pdf"
@@ -94,6 +115,16 @@ def main() -> int:
 
         run(str(HERE / "validate_workspace.py"), str(workspace), "--stage", "publication")
         run(str(PUBLISH_AUDIT), str(workspace))
+
+        (workspace / "90-audit/uncertain-items.jsonl").write_text(
+            json.dumps({"schema_version": "1.0", "issue_id": "UI999999", "adjudication_id": "UA999999",
+                        "status": "open", "reader_impact": "high", "note": "invalid fixture"}, ensure_ascii=False) + "\n",
+            encoding="utf-8",
+        )
+        mismatch = run(str(HERE / "validate_workspace.py"), str(workspace), "--stage", "publication", expect=1)
+        if "does not match open_material" not in mismatch.stdout:
+            raise AssertionError("validator did not reject an inconsistent open-item projection")
+        run(str(PROJECT_OPEN), str(workspace))
 
         bad = dict(record)
         bad["block_id"] = "P000001-B999"

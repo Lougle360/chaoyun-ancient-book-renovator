@@ -118,6 +118,8 @@ def main() -> int:
         },
     )
     (output / "90-audit/events.jsonl").touch()
+    (output / "90-audit/uncertainty-candidates.jsonl").touch()
+    (output / "90-audit/uncertainty-adjudication.jsonl").touch()
     (output / "90-audit/uncertain-items.jsonl").touch()
     print(
         json.dumps(

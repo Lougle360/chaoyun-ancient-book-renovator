@@ -37,6 +37,7 @@ chaoyun-ancient-book-renovator
    ├─ chaoyun-ancient-book-renovator   # 总控与质量门
    ├─ chaoyun-pdf-diagnoser            # PDF 诊断和页面路由
    ├─ chaoyun-source-reconstructor      # 原书重建与证据记录
+   ├─ chaoyun-uncertainty-adjudicator   # 疑点归并、裁决和读者影响分级
    ├─ chaoyun-text-normalizer           # 繁简、异体字、标点与分段
    ├─ chaoyun-classical-modernizer      # 文言文、日文到现代中文
    ├─ chaoyun-reading-editor            # 普通读者版编辑
@@ -51,7 +52,7 @@ $chaoyun-ancient-book-renovator
 
 ## 安装
 
-将仓库中的七个 Skill 目录复制到 Codex Skill 目录：
+将仓库中的八个 Skill 目录复制到 Codex Skill 目录：
 
 ```powershell
 git clone https://github.com/Lougle360/chaoyun-ancient-book-renovator.git
@@ -90,11 +91,15 @@ Copy-Item -Recurse -Force ".\skills\chaoyun-*" $target
         ↓
 逐页重建原文与图像证据
         ↓
+归并并裁决识读疑点
+        ↓
 繁简、异体字、标点和结构规范
         ↓
 文言文/日文转换为现代中文
         ↓
 普通读者编辑、导读、图解和术语表
+        ↓
+再次裁决翻译与编辑疑点
         ↓
 独立语义审计与结构审计
         ↓
@@ -127,6 +132,8 @@ book-workspace/
 │  └─ 原书名·现代白话版.pdf
 └─ 90-audit/
    ├─ events.jsonl
+   ├─ uncertainty-candidates.jsonl
+   ├─ uncertainty-adjudication.jsonl
    ├─ uncertain-items.jsonl
    ├─ quality-report.json
    └─ quality-report.md
@@ -149,6 +156,7 @@ python .\skills\chaoyun-quality-publisher\scripts\audit_publication.py <book-wor
 - 不用流畅改写覆盖原始证据。
 - 不根据上下文虚构缺失文字。
 - 不把技术检查通过等同于语义正确。
+- 不把模型提出的每一条疑问都当成正文缺损；候选、裁决历史和读者可见未决项必须分开。
 - 不把样章、局部结果或 C 级草稿标为完整版。
 - 付费全书处理前先估算成本并取得明确授权。
 - 所有现代化内容都应能追溯到稳定的原书页面和内容块。
