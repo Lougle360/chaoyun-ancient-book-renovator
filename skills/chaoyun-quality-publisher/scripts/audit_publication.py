@@ -180,7 +180,7 @@ def main() -> int:
     if ordinary_reader:
         errors.extend(validate_integrity(root))
         errors.extend(validate_release_binding(root, pdf))
-        if str(book_data.get("workflow_schema_version") or "") == "1.9" and pdf.is_file():
+        if str(book_data.get("workflow_schema_version") or "") in {"1.9", "1.10"} and pdf.is_file():
             errors.extend(validate_pdf_readability(root, pdf))
         alias = root / "60-publication/modern-reading.pdf"
         if not args.candidate_pdf and alias.is_file() and pdf.is_file() and alias.read_bytes() != pdf.read_bytes():

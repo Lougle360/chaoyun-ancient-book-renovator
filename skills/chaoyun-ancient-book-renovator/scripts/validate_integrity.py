@@ -260,6 +260,8 @@ def validator_paths() -> dict[str, Path]:
     return {
         "controller/validate_workspace.py": controller / "validate_workspace.py",
         "controller/validate_integrity.py": controller / "validate_integrity.py",
+        "controller/validate_reader_units.py": controller / "validate_reader_units.py",
+        "controller/validate_production_plan.py": controller / "validate_production_plan.py",
         "controller/validate_delivery.py": controller / "validate_delivery.py",
         "reading-editor/validate_reader_value.py": skills / "chaoyun-reading-editor/scripts/validate_reader_value.py",
         "reader-reviser/validate_reader_revision.py": skills / "chaoyun-reader-experience-reviser/scripts/validate_reader_revision.py",
@@ -279,8 +281,8 @@ def validate_policy_lock(root: Path, errors: list[str]) -> None:
     except (OSError, ValueError, json.JSONDecodeError) as exc:
         errors.append(f"invalid acceptance-policy-lock.json: {exc}")
         return
-    if lock.get("policy_version") != "1.9":
-        errors.append("acceptance policy lock must use version 1.9")
+    if lock.get("policy_version") != read_json(root / "book.json").get("workflow_schema_version"):
+        errors.append("acceptance policy lock must match the book workflow version")
     contract = root / "10-diagnosis/edition-scope.json"
     if not contract.is_file() or lock.get("edition_scope_sha256") != sha256(contract):
         errors.append("acceptance policy lock does not match the frozen edition scope")
@@ -297,7 +299,7 @@ def validate_source(root: Path) -> list[str]:
         book = read_json(root / "book.json")
     except (OSError, ValueError, json.JSONDecodeError) as exc:
         return [f"cannot validate workflow 1.9 source integrity: {exc}"]
-    if book.get("delivery_mode") != "ordinary_reader" or str(book.get("workflow_schema_version") or "") != "1.9":
+    if book.get("delivery_mode") != "ordinary_reader" or str(book.get("workflow_schema_version") or "") not in {"1.9", "1.10"}:
         return errors
     try:
         source = read_jsonl(root / "20-source/blocks.jsonl")
@@ -332,7 +334,7 @@ def validate(root: Path) -> list[str]:
         book = read_json(root / "book.json")
     except (OSError, ValueError, json.JSONDecodeError) as exc:
         return [f"cannot validate workflow 1.9 integrity: {exc}"]
-    if book.get("delivery_mode") != "ordinary_reader" or str(book.get("workflow_schema_version") or "") != "1.9":
+    if book.get("delivery_mode") != "ordinary_reader" or str(book.get("workflow_schema_version") or "") not in {"1.9", "1.10"}:
         return errors
     try:
         source = read_jsonl(root / "20-source/blocks.jsonl")
@@ -344,4 +346,14 @@ def validate(root: Path) -> list[str]:
     validate_scope(root, source, manuscript, errors)
     validate_review_stability(root, manuscript_path, errors)
     validate_policy_lock(root, errors)
+    from validate_reader_units import validate as validate_units
+    errors.extend(validate_units(root, publication=True))
+    if book.get("workflow_schema_version") == "1.10":
+        try:
+            state = read_json(root / "run-state.json")
+        except (OSError, ValueError) as exc:
+            errors.append(f"invalid reader-unit stage state: {exc}")
+            state = {}
+        if state.get("stages", {}).get("reader_units_built", {}).get("status") != "passed":
+            errors.append("reader_units_built stage must pass before publication")
     return errors

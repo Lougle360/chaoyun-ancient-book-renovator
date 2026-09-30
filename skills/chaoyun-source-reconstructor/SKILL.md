@@ -30,3 +30,5 @@ Follow [references/reconstruction-policy.md](references/reconstruction-policy.md
 ## Gate
 
 Pass only when all included pages and blocks are accounted for, reading order is supported, assets resolve, and uncertain material is linked to page evidence. Every included physical page must use its real non-sentinel page ID; repeated placeholders such as `p000` are a hard failure. Join cross-page sentences before modernization or preserve an explicit continuation link; do not translate isolated line fragments as complete prose. Structural validity alone is not OCR accuracy.
+
+For workflow 1.10 ordinary-reader work, follow [reading-unit ownership](../chaoyun-ancient-book-renovator/references/reader-units.md). Supply source-backed commentary targets and continuation links to the editor. Inspect page boundaries and identify chapter/book notes separately from passage notes; do not attach by nearest-neighbor text alone.

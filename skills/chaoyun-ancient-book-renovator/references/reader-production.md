@@ -1,5 +1,7 @@
 # Reader production — workflow 1.8
 
+For workflow 1.10, also read [reader-units.md](reader-units.md). Its reviewed reading-unit contract is a prerequisite to bulk translation and extends, rather than bypasses, the 1.9 integrity and review gates. Use workflow_schema_version 1.10 for new workspaces; historical schema references below describe retained contracts.
+
 Workflow 1.9 retains this sequence and adds a locked edition-scope contract, `source-reader-map.jsonl`, a frozen acceptance-policy hash, at least three complete reader passes, two stable final passes, and a sequential final-PDF reading record. These are evidence requirements, not a claim that a fixed number of passes proves quality.
 
 Applies to `ordinary_reader` work. Archive/comparison editions retain their routes. This extends, and does not replace, 1.6 uncertainty closure and chapter-trial requirements. Use the same representative chapter for both trials; share actual snapshots and provenance, retaining each trial's distinct questions and conclusions.

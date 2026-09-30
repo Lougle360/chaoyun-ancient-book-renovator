@@ -9,6 +9,10 @@ Produce accurate modern Chinese at block level, with the source and normalizatio
 
 ## Route before translating
 
+For ordinary-reader work, first follow [understanding/sample/full modes](../chaoyun-ancient-book-renovator/references/reader-production.md). Read the entire reliable source and author `40-modernized/book-understanding.md` before bulk translation. Cite the central questions, claims, chapter relations, concept dependencies and actual examples; a contents list is insufficient. Hand the brief to reading-editor for design. Translate only the sample next, in surrounding context. Full translation begins after actual sample acceptance.
+
+Record book-specific senses, supporting blocks/quotes, alternate uses and concept relationships in `terminology.json`. Do not fill unclear senses with generic dictionary labels. If later source evidence changes understanding, update affected meanings and handoffs with history; never silently refresh an old acceptance hash.
+
 Classify each block or segment as `zh-Hans`, `zh-Hant`, `lzh`, `ja`, `ja-bungo`, `kanbun`, `mixed`, or `und`. Split mixed blocks only where the boundary is evidenced. Read [references/language-routes.md](references/language-routes.md) for route-specific rules.
 
 ## Workflow
@@ -30,3 +34,5 @@ Classify each block or segment as `zh-Hans`, `zh-Hant`, `lzh`, `ja`, `ja-bungo`,
 ## Gate
 
 Every source content block must be translated, retained, marked noncontent, or excluded with a reason. No silent omission is allowed. High-risk translations must have evidence of an independent comparison or appear in the uncertainty ledger.
+
+For workflow 1.10, consume accepted [reader units](../chaoyun-ancient-book-renovator/references/reader-units.md) and run the production-plan gate before bulk translation. Understand an entire passage with its commentary and neighboring context, including cross-page continuations. Keep block provenance and distinguish what the original author asserts from what the annotator adds.

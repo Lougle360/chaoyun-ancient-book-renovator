@@ -50,3 +50,5 @@ python scripts/audit_publication.py book-workspace
 ## Gate
 
 Do not report completion until required outputs are nonempty, the package audit passes against the declared official PDF, semantic gates are evidenced, source-page accounting reconciles, and unresolved items fit the declared grade. Report the single official release file and remaining limitations.
+
+For workflow 1.10, enforce [reading-unit rendering](../chaoyun-ancient-book-renovator/references/reader-units.md). Check every PDF page for distinguishable main text/commentary and understandable cross-page note continuation. A continuation page need not repeat the main passage. Record actual page-specific observations; scripts must not manufacture approvals from page counts or extracted first/last lines.

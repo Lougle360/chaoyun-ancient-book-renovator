@@ -336,6 +336,9 @@ def main() -> int:
     uncertainty_counts: dict[str, int] = {}
     if args.stage != "publication":
         errors.extend(validate_source_integrity(root))
+    if args.stage in {"modernized", "edited"}:
+        from validate_reader_units import validate as validate_reader_units
+        errors.extend(validate_reader_units(root, publication=args.stage == "edited"))
     if args.stage == "publication":
         errors.extend(validate_integrity(root))
         uncertainty_counts = validate_uncertainties(root, errors, require_release=requires_editorial_report(book))

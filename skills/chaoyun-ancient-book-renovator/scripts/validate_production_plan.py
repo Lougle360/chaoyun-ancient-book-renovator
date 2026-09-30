@@ -126,7 +126,7 @@ def validate(root):
             return []
         if book.get('delivery_mode') != 'ordinary_reader':
             return ['production requires explicit delivery_mode']
-        if book.get('workflow_schema_version') not in {'1.7', '1.8', '1.9'}:
+        if book.get('workflow_schema_version') not in {'1.7', '1.8', '1.9', '1.10'}:
             errors.append('ordinary-reader production requires workflow 1.7, 1.8 or 1.9; preserve legacy evidence and perform fresh design/sample review')
         plan = obj(local(root, '50-edited/production-plan.json'))
         if plan.get('schema_version') != '1.0':
@@ -134,6 +134,8 @@ def validate(root):
         bindings = plan.get('bindings')
         if not isinstance(bindings, dict) or not REQUIRED_BINDINGS.issubset(bindings):
             raise ValueError('production-plan is missing required source/design/sample bindings')
+        if book.get('workflow_schema_version') == '1.10' and '50-edited/reader-units.json' not in bindings:
+            errors.append('production plan must bind reader-units.json before bulk translation')
         for name, digest in bindings.items():
             if sha(local(root, name)) != digest:
                 errors.append(f'production dependency changed: {name}; review impacted work, do not refresh hashes alone')
@@ -177,6 +179,8 @@ def validate(root):
         errors.extend(session_errors)
     except (OSError, ValueError, TypeError, KeyError) as exc:
         errors.append(f'invalid production prerequisites: {exc}')
+    from validate_reader_units import validate as validate_units
+    errors.extend(validate_units(root))
     return errors
 
 

@@ -19,6 +19,7 @@ STAGES = [
     "normalized",
     "book_understood",
     "reader_designed",
+    "reader_units_built",
     "sample_accepted",
     "modernized",
     "edited",
@@ -103,7 +104,7 @@ def main() -> int:
         output / "book.json",
         {
             "schema_version": "1.0",
-            "workflow_schema_version": "1.9",
+            "workflow_schema_version": "1.10",
             "delivery_mode": args.delivery_mode,
             "book_id": book_id,
             "title": source.stem,
@@ -121,11 +122,11 @@ def main() -> int:
         output / "run-state.json",
         {
             "schema_version": "1.0",
-            "workflow_schema_version": "1.9",
+            "workflow_schema_version": "1.10",
             "book_id": book_id,
             "updated_at": now,
             "stages": {stage: {"status": "pending"} for stage in STAGES
-                       if args.delivery_mode == "ordinary_reader" or stage not in {"book_understood", "reader_designed", "sample_accepted"}},
+                       if args.delivery_mode == "ordinary_reader" or stage not in {"book_understood", "reader_designed", "reader_units_built", "sample_accepted"}},
             "current_stage": "intake",
         },
     )

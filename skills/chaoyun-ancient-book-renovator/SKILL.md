@@ -99,3 +99,5 @@ Workflow schema 1.6 adds evidence-bound doubt closure, canonical duplicate depen
 - **D — unrecoverable:** source evidence is insufficient for a responsible conversion.
 
 Use [references/data-contract.md](references/data-contract.md) for files and record fields. Use [references/quality-gates.md](references/quality-gates.md) before advancing a stage or declaring completion.
+
+Workflow 1.10 requires [reading units](references/reader-units.md) before bulk modernization and binds them again at publication. Read that contract for ordinary-reader work. Keep the existing 1.9 fidelity, scope, uncertainty, reader and PDF gates. The added state reader_units_built sits after reader_designed and before sample_accepted. Establish commentary scope from evidence; passage, chapter, book, nested notes and source lacunae have different handling. Never force a note onto an invented passage. Complete meaningful pages/chapters per work session, save resumable evidence, and continue available work after status updates; only report verified progress or a real blocker.

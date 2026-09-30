@@ -26,7 +26,7 @@ Record target reader, reading goal, reading level, modernization depth, annotati
 1. Preserve every source `block_id` in `50-edited/blocks.jsonl` while allowing display-level paragraph grouping with contributing IDs. Maintain `50-edited/source-reader-map.jsonl`: exactly one row per source block, with its component, destination, reader heading and an exact reader quote or an explicit preserved non-reading destination. Hidden comments and aggregated anchors are not mapping evidence.
 2. Build coherent book, volume, chapter, section, note, figure, and table hierarchy.
 3. Improve sentence length, transitions, and paragraphing only within the accepted meaning.
-4. Add a front-of-book reading map when the original structure is unfamiliar, and give each major chapter a concise introduction stating its question, key concepts, and reading route.
+4. Add a reading map or chapter introduction only where it resolves an actual reader obstacle. Keep full chapter-design reasoning in the process edition; do not mechanically print it in the final edition.
 5. Create reader aids—first-use term notes, historical context, cross-references, examples, and practical observation checklists where appropriate—as explicitly labeled editorial content.
 6. Keep figures and captions near the relevant passage. Maintain stable numbering and alt text, and explain what to inspect and in what order when the image is necessary to understand the text.
 7. Attribute traditional causal, predictive, medical, or fortune claims as source/traditional views. Separate them from observable descriptions without deleting or endorsing them.
@@ -46,3 +46,5 @@ python scripts/validate_reader_value.py book-workspace
 ## Gate
 
 Pass this production stage when the introduction and glossary have verifiable book-specific evidence, hierarchy and references are coherent, all content IDs are accounted for, and editorial additions are visibly distinct from translated source content. Whole-book reader acceptance belongs to `$chaoyun-reader-experience-reviser`; OCR corruption or missing evidence returns to reconstruction. Fluency never overrides semantic fidelity.
+
+For workflow 1.10, build and freeze [reader units](../chaoyun-ancient-book-renovator/references/reader-units.md) in design mode and produce their exact manuscript locations in full-edition mode. Both source text and old commentary become natural modern prose. Use visual hierarchy instead of repeated source-role labels. Chapter introductions and glossary fields are process evidence; print only prose that resolves an actual reader obstacle.

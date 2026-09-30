@@ -277,7 +277,7 @@ def validate(root: Path) -> tuple[list[str], dict[str, int]]:
     if acceptance.get("output_sha256") != output_hash:
         errors.append("reader acceptance hash does not match 50-edited/modern-reading.md")
 
-    if workflow_version in {"1.8", "1.9"}:
+    if workflow_version in {"1.8", "1.9", "1.10"}:
         cut = acceptance.get("final_reader_cut")
         required_checks = {
             "ai_authored_material", "guide_material_removed", "chapter_completeness",

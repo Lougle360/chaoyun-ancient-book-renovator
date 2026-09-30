@@ -44,3 +44,5 @@ Do not mechanically add a preface, summary or example to every section. First es
 ## Gate
 
 Pass when all required reading dimensions have evidence-based regression verdicts, every applied change replays exactly between frozen snapshots, no unresolved reader issue remains from any cycle, the acceptance hash and section evidence match the final manuscript, and medium/high semantic-risk changes have active evidence-backed confirmation in the unified uncertainty lifecycle. Deterministic validation cannot certify that a reader truly understands; report that limit and retain the actual comprehension review.
+
+For workflow 1.10, use [reading-unit checks](../chaoyun-ancient-book-renovator/references/reader-units.md). In each actual whole-book pass, test chapter meaning, commentary ownership, continued sentences, first-use concepts and unnecessary AI prose. Retain actual answers and failures; do not generate pass records from a loop over headings. Structural failure returns to reconstruction, systematic meaning failure to modernization. Existing three-pass/two-stable requirements remain in force.

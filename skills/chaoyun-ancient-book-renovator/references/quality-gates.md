@@ -1,5 +1,7 @@
 # Quality gates
 
+Workflow 1.10 additionally requires [reading-unit evidence](reader-units.md) before bulk modernization, exact rendering locations after editing, and both bindings at publication. All 1.9 gates below continue to apply.
+
 ## G0 Intake integrity
 
 - Source opens and its SHA-256, byte size, page count, and filename are recorded.

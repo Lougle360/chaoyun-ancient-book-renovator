@@ -11,7 +11,7 @@ Before full production, follow [reader-production.md](reader-production.md): who
 - State in one plain sentence what the book is, who it is for, and how it should be used. The longer introduction must distinguish title attribution, demonstrated authorship, later compilation, and surviving-edition scope whenever they differ.
 - Place a reading map or “how to read this book” section before the main text when the original structure is difficult for modern readers.
 - Reconstruct an “original-book contents” view from printed contents pages and verified physical-page evidence. Keep it distinct from a reader-oriented route or editor-created regrouping.
-- Give each major chapter a short introduction that explains its question, key terms, and reading route.
+- Design each chapter's question, key terms and reading route in the process edition; include a short chapter introduction in the final edition only when readers need it.
 - Explain specialist terms at first occurrence and maintain a complete glossary at the end. Each glossary entry records its first source occurrence and contextual meaning; unresolved names or opaque terms stay explicitly unresolved.
 - Apply `增、删、改、整` from the reader's point of view. Add context that removes a barrier, remove clutter from the main path without erasing source evidence, rewrite for clear modern comprehension, and organize the book around reader questions while preserving source order separately.
 - Make the introduction answer what the book is, who should read it, what value it offers, what its parts contain and how they relate, what is distinctive, where to begin, what remains limited or uncertain, and what the modern edition changed.
