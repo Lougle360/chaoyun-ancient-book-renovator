@@ -1,4 +1,4 @@
-"""Read-only workflow 1.8 dependency checks, not semantic certification."""
+"""Read-only production-plan 1.0/1.1 dependency checks, not semantic certification."""
 from __future__ import annotations
 
 import argparse
@@ -10,6 +10,10 @@ REQUIRED_BINDINGS = {
     '20-source/blocks.jsonl', '30-normalized/blocks.jsonl',
     '40-modernized/book-understanding.md', '50-edited/editorial-plan.md',
     '50-edited/sample/reader-sample.md',
+}
+ILLUSTRATION_BINDINGS = {
+    '50-edited/illustration-plan.md',
+    '50-edited/sample/illustration-review.md',
 }
 FIGURE_TYPES = {'figure', 'table', 'diagram', 'map', 'image', 'chart', 'figure/table'}
 
@@ -129,11 +133,14 @@ def validate(root):
         if book.get('workflow_schema_version') not in {'1.7', '1.8', '1.9', '1.10'}:
             errors.append('ordinary-reader production requires workflow 1.7, 1.8 or 1.9; preserve legacy evidence and perform fresh design/sample review')
         plan = obj(local(root, '50-edited/production-plan.json'))
-        if plan.get('schema_version') != '1.0':
-            errors.append('production-plan schema must be 1.0')
+        schema = plan.get('schema_version')
+        if schema not in {'1.0', '1.1'}:
+            errors.append('production-plan schema must be 1.0 (legacy) or 1.1')
         bindings = plan.get('bindings')
         if not isinstance(bindings, dict) or not REQUIRED_BINDINGS.issubset(bindings):
             raise ValueError('production-plan is missing required source/design/sample bindings')
+        if schema == '1.1' and not ILLUSTRATION_BINDINGS.issubset(bindings):
+            errors.append('production-plan 1.1 must bind the whole-book illustration plan and representative-figure review')
         if book.get('workflow_schema_version') == '1.10' and '50-edited/reader-units.json' not in bindings:
             errors.append('production plan must bind reader-units.json before bulk translation')
         for name, digest in bindings.items():

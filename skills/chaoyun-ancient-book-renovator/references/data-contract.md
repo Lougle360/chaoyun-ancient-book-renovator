@@ -2,6 +2,8 @@
 
 ## Directory layout
 
+New full-book ordinary-reader production uses production-plan schema `1.1`, with `50-edited/illustration-plan.md` created during reading design and `50-edited/sample/illustration-review.md` created from actual representative-page review. Both are required hash-bound dependencies. Their content, ownership and no-illustration handling are defined in [whole-book-illustration-plan.md](whole-book-illustration-plan.md); other reader contracts remain in force. Do not create empty planning or approval placeholders.
+
 Workflow 1.9 extends the existing 1.8 reader-production and 1.6 doubt-closure contracts. Ordinary-reader work additionally freezes `10-diagnosis/edition-scope.json`, records `50-edited/source-reader-map.jsonl`, stores complete passes under `50-edited/review-history/full-passes/`, and freezes the actual validator hashes in `90-audit/acceptance-policy-lock.json`. Ordinary-reader work also retains `40-modernized/book-understanding.md`, `50-edited/editorial-plan.md`, `50-edited/production-plan.json`, `50-edited/sample/reader-sample.md`, an immutable process-edition snapshot, and final-reader-cut evidence with retained reading-session files. Their single authoritative contract is [reader-production.md](reader-production.md). Reader review/acceptance remains schema 1.2; append-only revision events retain 1.1. Existing 1.6 pilot/closure files remain required. Do not initialize fake successful planning or sample artifacts.
 
 ```text
@@ -57,7 +59,7 @@ book-workspace/
 
 Files appear only when their stage runs. Do not create fake empty outputs to satisfy the layout.
 
-New workspaces declare workflow schema 1.8 and explicit `delivery_mode`. Reader review/acceptance use schema 1.2 plus the workflow-1.8 `final_reader_cut` object. Ordinary-reader editions require the production-plan handoff plus `50-edited/delivery-contract.json`, `90-audit/fidelity-review.json`, `90-audit/pilot-review.json`, and `90-audit/uncertainty-release-review.json` when adjudications exist. The uncertainty Skill's `references/closure-and-trial.md` still defines the 1.6 located discovery, closure, trial and final-recheck evidence. Existing books need fresh review, not automatic successful migration. Preserve old records and all unresolved issue identities.
+New workspaces declare workflow schema 1.10 and explicit `delivery_mode`. Reader review/acceptance use schema 1.2 plus the workflow-1.8 `final_reader_cut` object. Ordinary-reader editions require the production-plan handoff plus `50-edited/delivery-contract.json`, `90-audit/fidelity-review.json`, `90-audit/pilot-review.json`, and `90-audit/uncertainty-release-review.json` when adjudications exist. The uncertainty Skill's `references/closure-and-trial.md` still defines the 1.6 located discovery, closure, trial and final-recheck evidence. Existing books need fresh review, not automatic successful migration. Preserve old records and all unresolved issue identities.
 
 For an ordinary-reader edition, `50-edited/reader-aids.json`, the three whole-book reader-review artifacts, and `50-edited/editorial-report.json` are required before publication. The reader-aids file and revision ledger are item-level evidence sources; the editorial report is a derived summary and may not self-certify counts. Its schema and evidence rules are defined in [editorial-evidence-contract.md](editorial-evidence-contract.md). Supplemental PDFs stay below `60-publication/supplements/`; the publication root contains only the single declared official reader PDF and an optional exact internal alias.
 
@@ -66,6 +68,8 @@ For an ordinary-reader edition, `50-edited/reader-aids.json`, the three whole-bo
 `book.json` records `title`, `edition_label`, `target_reader`, `author`, `editor`, `producer`, `release_filename`, `source_pdf_pages`, and the included/excluded page accounting when known. The official reader PDF uses `release_filename`; `modern-reading.pdf` may exist only as a stable internal alias and must not create ambiguity about which file is the release artifact.
 
 ## Stable identity
+
+For the original-layout simplified proof checkpoint, `book.json.layout_proof_review` is `{"required": true, "record": "90-audit/layout-proof/V4/review.json"}` (use the actual version). Preserve each version below `90-audit/layout-proof/`; the proof PDF remains in `60-publication/supplements/`. This scoped extension does not change workflow 1.10 or the official reader release. Its authoritative schema, scope, review states and hash rules are in [layout-proof-review.md](layout-proof-review.md).
 
 - `book_id` is fixed at intake.
 - `page_id` uses `P` plus a zero-padded logical page number, such as `P000123`.

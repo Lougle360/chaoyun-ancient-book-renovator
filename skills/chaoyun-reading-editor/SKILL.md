@@ -11,7 +11,11 @@ The reader, not the pipeline, is the organizing point of view. Every editorial a
 
 ## Establish the edition
 
-For ordinary-reader work, use [design/sample/full-edition modes](../chaoyun-ancient-book-renovator/references/reader-production.md). Consume whole-book understanding before writing `50-edited/editorial-plan.md`: introduction narrative, chapter connections, prerequisites, first explanations, actual examples, figures and lookup material. Draft pending reader outcomes. Design precedes full translation; consult the translator on meaning.
+For a selected-page “配图＋现代白话文／作者口吻” sample, use the controller's [illustrated reader sample route](../chaoyun-ancient-book-renovator/references/illustrated-reader-samples.md). Preserve source-bearing commentary and meaning, integrate necessary first-use explanations into prose, and keep correction records and illustration provenance in the evidence package. Do not add reader-visible audit notes, exercises, a formal introduction or a glossary merely to fill full-book fields. The full-book production and gate requirements below remain applicable when the requested scope is a book.
+
+For full-book ordinary-reader production, use [design/sample/full-edition modes](../chaoyun-ancient-book-renovator/references/reader-production.md). Consume whole-book understanding before writing `50-edited/editorial-plan.md`: introduction narrative, chapter connections, prerequisites, first explanations, actual examples, figures and lookup material. Draft pending reader outcomes. Design precedes full translation; consult the translator on meaning.
+
+Own the mandatory [whole-book illustration plan](../chaoyun-ancient-book-renovator/references/whole-book-illustration-plan.md) in design mode: write `50-edited/illustration-plan.md` after book understanding and before sample production. Use the source inventory and source-reconstructor/modernizer findings to decide chapter needs, figure coverage, visual conventions, precise versus generated content and representative trials. Record actual representative-page findings in `50-edited/sample/illustration-review.md`, using the sample's independent reviewer. Bind both files in production-plan schema `1.1` before scaling. No-illustration decisions still need source-based reasons, not manufactured decorative figures.
 
 Make a real sample with introduction, connected prose, representative terms and a figure where applicable. Hand it to reader-experience-reviser sample mode before scaling. Use its accepted quality and explanation methods, not repeated sentence templates. Full-edition mode uses accepted translations and this plan.
 
@@ -22,6 +26,10 @@ Assume AI-authored prose is the likeliest source of reader hostility. For every 
 Record target reader, reading goal, reading level, modernization depth, annotation density, and whether the output is reading-only or source-comparison. If the user asks for ordinary people to read directly, optimize for interested non-specialists: retain necessary domain terminology, explain it on first occurrence, and do not assume prior training.
 
 ## Editing work
+
+For fixed wording, figure lettering and hard characters, apply [text/image and rare-glyph policy](../chaoyun-ancient-book-renovator/references/text-image-and-rare-glyph-policy.md). Keep original recitations in typeset body text and narration separate; keep form-bearing glyphs inside figures. Group symbols, original wording and procedural context only by evidenced links. Do not replace a full chant with its meaning, remove it as an editorial note, or rasterize the whole passage to hide unresolved glyphs. Preserve clear unidentified glyphs with faithful single-glyph insets when needed, and disclose real copy/search limitations. Check semantic details as well as block coverage.
+
+For remaining unknowns, apply [glyph fallback and inline layout](../chaoyun-ancient-book-renovator/references/glyph-fallback-and-acceptance.md): retain true residual forms, use a consistent regional font size/baseline without stretching fragments, and keep surrounding words as body text. Carry stable glyph references and honest alt/copy fallbacks into Markdown and PDF; explain necessary uncertainty markers briefly in the reading path. Hand complete surrounding sequences to publication for copy-order checks, not just an image count.
 
 1. Preserve every source `block_id` in `50-edited/blocks.jsonl` while allowing display-level paragraph grouping with contributing IDs. Maintain `50-edited/source-reader-map.jsonl`: exactly one row per source block, with its component, destination, reader heading and an exact reader quote or an explicit preserved non-reading destination. Hidden comments and aggregated anchors are not mapping evidence.
 2. Build coherent book, volume, chapter, section, note, figure, and table hierarchy.
@@ -37,7 +45,7 @@ Record target reader, reading goal, reading level, modernization depth, annotati
 12. Assemble final cover/credits wording and all reader-facing sections before full-reader review. Maintain the book-specific `50-edited/delivery-contract.json` outcomes using the controller's `references/delivery-and-rework.md`. Preserve this complete information-rich draft as the process edition, then hand it to `$chaoyun-reader-experience-reviser` for the final-reader cut and full regression; do not certify it from the same production pass. A large cut requires issue-level revision rows with before/after evidence; one catch-all `rewrite` record cannot account for a book-scale deletion.
 
 Use [references/editorial-policy.md](references/editorial-policy.md) for boundaries and labeling.
-For ordinary-reader work, read and enforce [references/reader-value-contract.md](references/reader-value-contract.md), then run:
+For full-book ordinary-reader production, read and enforce [references/reader-value-contract.md](references/reader-value-contract.md), then run:
 
 ```shell
 python scripts/validate_reader_value.py book-workspace

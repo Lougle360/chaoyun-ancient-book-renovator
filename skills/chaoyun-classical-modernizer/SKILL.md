@@ -13,6 +13,10 @@ For ordinary-reader work, first follow [understanding/sample/full modes](../chao
 
 Record book-specific senses, supporting blocks/quotes, alternate uses and concept relationships in `terminology.json`. Do not fill unclear senses with generic dictionary labels. If later source evidence changes understanding, update affected meanings and handoffs with history; never silently refresh an old acceptance hash.
 
+Also classify function using [text/image and rare-glyph policy](../chaoyun-ancient-book-renovator/references/text-image-and-rare-glyph-policy.md). Modernize explanatory prose and instructions faithfully; retain fixed chants, prayers, invocations and declarations verbatim as reader body text, with separate plain-language narration. Classify verse by its use, not rhyme alone. Restore protected originals from verified source if an inherited normalized layer already changed them. Keep ritual instructions and embedded notes in their source-supported order; do not invent readings, missing chants or figure pairings. A literal passage retained with explanation is a valid output, not an untranslated omission.
+
+When a chant remains undeciphered, use [glyph fallback](../chaoyun-ancient-book-renovator/references/glyph-fallback-and-acceptance.md): preserve the source-backed shape or gap and explain only supported meaning. Character identity, modern dictionary pronunciation and the passage's recitation sound are different claims. Do not infer a complete utterance from context, synthesize a hybrid from different witnesses, or report complete recitation restoration merely because the source shapes are displayed.
+
 Classify each block or segment as `zh-Hans`, `zh-Hant`, `lzh`, `ja`, `ja-bungo`, `kanbun`, `mixed`, or `und`. Split mixed blocks only where the boundary is evidenced. Read [references/language-routes.md](references/language-routes.md) for route-specific rules.
 
 ## Workflow

@@ -11,6 +11,8 @@ This is one lifecycle with unlimited checkpoints, not separate first, second, or
 
 ## Required separation
 
+When a reader reports wrong, missing or semantically incoherent text, apply [字形、校读与语义复核](../chaoyun-ancient-book-renovator/references/text-semantics-review.md). Review the whole declared passage/page scope, including unflagged text. Distinguish OCR/transcription error, a legible source typo, normalization damage, broken reading order and unresolved meaning. A visible but nonsensical glyph stays in the source; supported emendation belongs in the reading layer. Register separate material questions when restoring a glyph leaves its meaning unresolved. Use actual same-book titles, parallel passages or trustworthy other editions; inherited OCR is not independent evidence. Recheck producer-introduced errors such as 弃→并, and never close meaning merely because字形已定. Preserve real independent review of the final text and PDF.
+
 Workflow 1.7 reader production shares the 1.6 chapter trial sample and retained evidence. Meaning uncertainty belongs here; a vague introduction or an unhelpful definition with settled meaning belongs to reading-editor. Do not relabel failed explanation as a tolerable source doubt. Retain existing candidate/closure obligations when a registered issue moves to editorial ownership.
 
 Keep three append-only or reproducible views:
@@ -22,6 +24,8 @@ Keep three append-only or reproducible views:
 For an older workspace, run `python scripts/migrate_legacy_ledger.py <workspace>`. It creates a timestamped backup before writing stable candidate IDs. Legacy closure claims reopen as `open_material` for evidence-based review; migration never creates successful closure evidence. Candidates without decisions remain unadjudicated and publication stays blocked.
 
 ## Adjudication workflow
+
+For rare characters and fixed formulas, apply [text/image and rare-glyph policy](../chaoyun-ancient-book-renovator/references/text-image-and-rare-glyph-policy.md) and [glyph fallback](../chaoyun-ancient-book-renovator/references/glyph-fallback-and-acceptance.md). Separate visible form, character identity, sound and meaning, as well as font failure and graphic symbols. Search failure is not evidence of nonexistence; contextual plausibility is not glyph proof. Preserve clear shapes and real residual strokes with located source evidence. Use □ only for a confirmed single position without usable shape evidence, and 〔缺损〕 for an unknown-length gap; explain editorial markers to readers. A glyph inset, copy-order repair or user acceptance may settle the corresponding presentation checkpoint without resolving its unknown reading. Keep the stable issue open until supported evidence resolves it; never treat generated completion as source evidence.
 
 1. Group candidates that point to the same page region or phrase. Preserve every `candidate_id` in the grouped decision.
 2. Register the doubt before editing. New candidate schema 1.3 records `origin_stage`, `review_cycle`, `checkpoint`, `created_by`, `created_at`, precise location/excerpt/reason, severity, a frozen located `input_ref`, and `owner_stage`. Route glyph/order issues to source reconstruction; script/punctuation to normalization; meaning to modernization; explanation to reading edit/revision; rendering to publication. Do not solve an evidence gap through fluent rewriting.

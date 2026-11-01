@@ -7,7 +7,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from validate_production_plan import REQUIRED_BINDINGS, sha, validate, validate_session
+from validate_production_plan import ILLUSTRATION_BINDINGS, REQUIRED_BINDINGS, sha, validate, validate_session
 
 SKILLS = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(SKILLS / 'chaoyun-reader-experience-reviser/scripts'))
@@ -86,6 +86,56 @@ class ProductionTests(unittest.TestCase):
 
     def test_valid_integrity_fixture(self):
         self.assertEqual(validate(self.root), [])
+
+    def illustration_contract(self):
+        self.plan['schema_version'] = '1.1'
+        for relative in ILLUSTRATION_BINDINGS:
+            path = self.root / relative
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text('SYNTHETIC INTEGRITY FIXTURE ONLY: text-only source, no illustrations proposed.\n', encoding='utf-8')
+            self.plan['bindings'][relative] = sha(path)
+        self.save()
+
+    def test_illustration_contract_accepts_bound_no_figure_fixture(self):
+        self.illustration_contract()
+        self.assertEqual(validate(self.root), [])
+
+    def test_illustration_contract_requires_both_bindings(self):
+        self.illustration_contract()
+        for relative in ILLUSTRATION_BINDINGS:
+            with self.subTest(relative=relative):
+                digest = self.plan['bindings'].pop(relative)
+                self.save()
+                self.assertTrue(any('representative-figure review' in e for e in validate(self.root)))
+                self.plan['bindings'][relative] = digest
+
+    def test_illustration_contract_rejects_missing_files(self):
+        self.illustration_contract()
+        for relative in ILLUSTRATION_BINDINGS:
+            with self.subTest(relative=relative):
+                path = self.root / relative
+                data = path.read_bytes()
+                path.unlink()
+                self.assertTrue(any('missing, empty or escaping evidence' in e for e in validate(self.root)))
+                path.write_bytes(data)
+
+    def test_illustration_contract_rejects_changed_plan_or_review(self):
+        self.illustration_contract()
+        for relative in ILLUSTRATION_BINDINGS:
+            with self.subTest(relative=relative):
+                path = self.root / relative
+                data = path.read_bytes()
+                path.write_bytes(data + b'Changed after the recorded review.\n')
+                self.assertTrue(any('production dependency changed: ' + relative in e for e in validate(self.root)))
+                path.write_bytes(data)
+
+    def test_illustration_contract_rejects_empty_evidence_even_with_current_hash(self):
+        self.illustration_contract()
+        path = self.root / '50-edited/illustration-plan.md'
+        path.write_bytes(b'')
+        self.plan['bindings']['50-edited/illustration-plan.md'] = sha(path)
+        self.save()
+        self.assertTrue(any('missing, empty or escaping evidence' in e for e in validate(self.root)))
 
     def test_legacy_requires_migration(self):
         write(self.root / 'book.json', {'delivery_mode': 'ordinary_reader', 'workflow_schema_version': '1.6'})

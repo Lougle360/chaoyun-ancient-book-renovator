@@ -18,6 +18,7 @@ from validate_pdf_readability import validate as validate_pdf_readability
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / 'chaoyun-ancient-book-renovator' / 'scripts'))
 from validate_production_plan import validate as validate_production_plan
 from validate_integrity import validate as validate_integrity
+from validate_layout_proof import validate as validate_layout_proof
 
 
 IMAGE = re.compile(r"!\[[^\]]*\]\(([^)]+)\)")
@@ -41,6 +42,7 @@ def main() -> int:
     root = args.workspace.expanduser().resolve()
     errors: list[str] = []
     warnings: list[str] = []
+    errors.extend(validate_layout_proof(root))
 
     report = root / "90-audit/quality-report.json"
     report_data: dict = {}

@@ -36,6 +36,8 @@ Do not mechanically add a preface, summary or example to every section. First es
 
 ## Boundaries
 
+- Apply [text/image and rare-glyph policy](../chaoyun-ancient-book-renovator/references/text-image-and-rare-glyph-policy.md) when fixed originals or symbols occur. Do not remove a chant as untranslated clutter, merge its narration into the quoted words, or rewrite its repeated words for fluency. Test whether readers can distinguish original wording, explanation, symbol and action order. A clear unidentified glyph is not a blank; return glyph questions to reconstruction/adjudication.
+- For [glyph fallbacks](../chaoyun-ancient-book-renovator/references/glyph-fallback-and-acceptance.md), test whether readers recognize original shapes, residual fragments and editorial gap markers without mistaking them for complete restored words. Judge ordinary comprehension and the ability to reproduce the entire recitation separately; preservation alone does not establish pronunciation. Report actual copying limitations where they affect use.
 - Do not edit `20-source`, repair unreadable glyphs, or turn an uncertain translation into a confident sentence.
 - Do not delete source-bearing material merely because it is difficult. Move it to a labeled reference path when continuous reading benefits, and keep provenance.
 - Do not add generic background, decorative examples, or praise that answers no reader problem.

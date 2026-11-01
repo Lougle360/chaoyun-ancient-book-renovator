@@ -259,6 +259,8 @@ def validator_paths() -> dict[str, Path]:
     skills = controller.parents[1]
     return {
         "controller/validate_workspace.py": controller / "validate_workspace.py",
+        "controller/validate_layout_proof.py": controller / "validate_layout_proof.py",
+        "controller/validate_text_semantics.py": controller / "validate_text_semantics.py",
         "controller/validate_integrity.py": controller / "validate_integrity.py",
         "controller/validate_reader_units.py": controller / "validate_reader_units.py",
         "controller/validate_production_plan.py": controller / "validate_production_plan.py",
@@ -294,6 +296,7 @@ def validate_policy_lock(root: Path, errors: list[str]) -> None:
 
 def validate_source(root: Path) -> list[str]:
     """Run the workflow-1.9 structure/scope gate as soon as source reconstruction ends."""
+    root = Path(root).resolve()
     errors: list[str] = []
     try:
         book = read_json(root / "book.json")
@@ -329,6 +332,7 @@ def validate_source(root: Path) -> list[str]:
 
 
 def validate(root: Path) -> list[str]:
+    root = Path(root).resolve()
     errors: list[str] = []
     try:
         book = read_json(root / "book.json")

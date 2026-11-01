@@ -15,6 +15,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from validate_delivery import validate as validate_delivery
 from validate_integrity import validate as validate_integrity, validate_source as validate_source_integrity
 from validate_production_plan import validate as validate_production_plan
+from validate_layout_proof import validate as validate_layout_proof
 
 
 STAGE_FILES = {
@@ -259,6 +260,8 @@ def main() -> int:
         errors.append("book_id differs between book.json and run-state.json")
 
     target_index = len(ORDER) - 1 if args.stage == "publication" else ORDER.index(args.stage)
+    if args.stage in {"modernized", "edited", "publication"}:
+        errors.extend(validate_layout_proof(root))
     if requires_editorial_report(book) and args.stage in {"modernized", "edited", "publication"}:
         errors.extend(validate_production_plan(root))
         for stage in ("book_understood", "reader_designed", "sample_accepted"):
