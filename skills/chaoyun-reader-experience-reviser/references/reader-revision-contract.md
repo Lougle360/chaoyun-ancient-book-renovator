@@ -1,10 +1,16 @@
 # Whole-book reader revision contract
 
-Workflow 1.9 uses reader review/acceptance schema **1.2** and adds auditable repeated full-manuscript passes without changing the schema number. Preserve legacy reports and perform fresh review; do not manufacture historical snapshots or execution records. The examples below describe the base fields; actual reading-session and finalization fields are also required as specified in [reader-production](../../chaoyun-ancient-book-renovator/references/reader-production.md). Revision-event schema remains 1.1 for append-only compatibility.
+Reader review/acceptance uses schema 1.2 and revision events retain 1.1. The locked protocol controls scheduling: focused-v1 defaults to one stable complete final acceptance; unmarked legacy work retains three/two. Preserve real snapshots and executions; [reader-production](../../chaoyun-ancient-book-renovator/references/reader-production.md) defines reading-session and finalization fields.
 
-Before review, create `50-edited/review-policy.json` with `minimum_full_passes >= 3` and `required_stable_passes >= 2`. Three is a floor, not an automatic finish line. Each real pass writes one JSON record plus its retained transcript under `50-edited/review-history/full-passes/`. The record binds `manuscript_sha256`, a distinct `reviewer_run_id`, `status`, `findings`, `sections_covered`, `new_blocking_issues`, `open_blocking_issues`, `transcript`, and `transcript_sha256`. Every chapter and front/back-matter unit is actually read in every pass. The final required stable passes must both have no new or open blocking issue. Any edit after a pass invalidates its manuscript hash and restarts the stability count.
+Before review, freeze the policy under [execution-control](../../chaoyun-ancient-book-renovator/references/execution-control.md). Full records bind manuscript_sha256, actual producer_run_id/reviewer_run_id, status, findings, sections_covered, new_blocking_issues, open_blocking_issues, transcript and transcript_sha256. Focused records also bind acceptance_policy_lock_sha256 and actual accepted execution records as defined there. Read every chapter and front/back-matter unit. Focused defaults are minimum_full_passes=1 and required_stable_passes=1; unmarked legacy floors remain 3/2. Accepted final passes have no new/open blocker. Any manuscript-byte edit invalidates that acceptance.
 
 ## Reader review
+
+Scheduling follows [execution-control](../../chaoyun-ancient-book-renovator/references/execution-control.md): clean the manuscript, diagnose observed risks, preflight, freeze, then obtain independent complete acceptance. No mandatory extra diagnostic full read precedes focused-v1 acceptance. Queue edits during review and deliver evidence together. Reuse an existing complete read only if all exact-final-input and policy evidence remains valid.
+
+`full-passes/` is the current exact-manuscript set, not an unfiltered history directory. Use zero-padded sequence filenames; preserve superseded passes under their historical cycle and local checks under `limited-regressions/`. A local regression, copied earlier answer or metadata-only rebind never counts as a new full pass. Unchanged content evidence may be retained within its original scope, but any manuscript byte change still requires the full current-hash acceptance described above. These rules clarify honest counting without weakening existing validators or changing old release statuses.
+
+New full-pass sets declare review_mode: full_read and substantive sections_covered with inclusive start_line/end_line ranges covering the whole manuscript. Focused publication automatically verifies coverage and bindings; preflight --final-pass-set is optional diagnosis. No mechanical check establishes semantic truth or migrates old approvals.
 
 Create `50-edited/reader-review.json` before editing:
 
@@ -72,7 +78,7 @@ Rules:
 
 ## Acceptance report
 
-After a fresh regression read, create `50-edited/reader-acceptance-report.json`:
+After actual final acceptance (or a still-valid unchanged full read), create the report below. A zero-edit final read may support both initial review and this acceptance; separate form names do not require another model run. After edits, retain the original/failed evidence and accept the corrected final bytes:
 
 ```json
 {

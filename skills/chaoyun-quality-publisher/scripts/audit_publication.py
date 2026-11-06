@@ -60,6 +60,7 @@ def main() -> int:
         except (json.JSONDecodeError, OSError) as exc:
             errors.append(f"invalid book.json: {exc}")
 
+    errors.extend(validate_integrity(root))
     target_reader = str(book_data.get("target_reader") or "")
     edition_label = str(book_data.get("edition_label") or "")
     ordinary_reader = book_data.get("delivery_mode") not in {"source_comparison", "evidence_archive"}
@@ -180,7 +181,6 @@ def main() -> int:
     if pdf.is_file() and not pdf.read_bytes()[:5] == b"%PDF-":
         errors.append(f"official PDF does not have a PDF header: {pdf.relative_to(root)}")
     if ordinary_reader:
-        errors.extend(validate_integrity(root))
         errors.extend(validate_release_binding(root, pdf))
         if str(book_data.get("workflow_schema_version") or "") in {"1.9", "1.10"} and pdf.is_file():
             errors.extend(validate_pdf_readability(root, pdf))

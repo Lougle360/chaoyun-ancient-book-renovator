@@ -341,6 +341,11 @@ def main() -> int:
         # The long-standing suite remains a workflow-1.8 compatibility test.
         # Workflow 1.9 integrity gates have their own adversarial regression test.
         book["workflow_schema_version"] = "1.8"
+        book.pop("review_protocol", None)
+        write_json(workspace / "50-edited/review-policy.json", {
+            "schema_version": "1.0", "minimum_full_passes": 3, "required_stable_passes": 2,
+            "required_methods": ["manuscript_reader", "source_fidelity", "final_pdf_reader"],
+        })
         book["source_pages"] = 1
         book["source_pdf_pages"] = 1
         write_json(book_path, book)

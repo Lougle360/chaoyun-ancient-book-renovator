@@ -7,17 +7,19 @@ description: Read a complete modernized book as an ordinary reader, diagnose who
 
 Read the book from cover to glossary as the declared reader, not as the pipeline that produced it. Separate the first audit pass from the revision pass so that editing does not hide the original reader problem.
 
+Use the controller’s [execution protocol](../chaoyun-ancient-book-renovator/references/execution-control.md). Focused-v1 defaults to one actual complete stable independent final acceptance; unmarked legacy work retains three-full-pass/two-stable requirements. Do not add a mandatory diagnostic full read. Prepare/clean the manuscript first, diagnose observed risks, and deliver answers, findings, transcript and bindings together. Changed manuscript bytes still need fresh full acceptance. Formal focused publication checks actual full coverage automatically; local/hash-only checks never satisfy it.
+
 ## Modes
 
 - **Sample mode:** follow [the production contract](../chaoyun-ancient-book-renovator/references/reader-production.md) before full production. Obtain actual unaided answers in a separate invocation before source comparison. Method failures return to understanding/design. Sample acceptance does not certify the book.
 
-- **Manuscript mode:** required after `$chaoyun-reading-editor`. Review `50-edited/modern-reading.md`, apply accepted changes, and produce the reader-accepted manuscript before final uncertainty adjudication.
-- **Final-reader mode:** required for workflow 1.8 after the information-rich manuscript is reviewed. Preserve that manuscript under review history, remove or move non-reading process/guide matter, audit every AI-authored section, and run a new complete reading session on the exact compact output.
+- **Manuscript mode:** independently inspect the complete manuscript, preserve understanding and obstacles, and return edits to their producer. This may supply final acceptance when the already-clean frozen manuscript needs no change.
+- **Final-reader mode:** accept the compact final output with complete meaningful-unit coverage and actual reading evidence. Preserve process snapshot and final-cut checks; focused-v1 does not require another independent full read solely because manuscript mode is renamed final-reader mode.
 - **Proof mode:** run on the publication candidate when pagination, figure placement, navigation, or rendered context may change the reading experience. Return content defects to manuscript mode and visual defects to `$chaoyun-quality-publisher`.
 
 ## Workflow
 
-1. Save an immutable input manuscript snapshot and its hash, then complete an uninterrupted reader pass before editing. Review introduction promises, prerequisites, navigation, continuity, terminology burden, examples, figures, repetition, source/editor distinction, and closure.
+1. Prepare the clean candidate and immutable input snapshot. In actual full acceptance, finish reading and record answers before editing or seeing source answers. Check introduction promises, prerequisites, navigation, continuity, terminology, examples, figures, repetition, source/editor distinction and closure. Targeted pre-freeze diagnosis inspects its declared scope and cannot be labeled full acceptance.
 2. Record every obstacle in `50-edited/reader-review.json`. A statement such as “reads well” is not evidence; identify where the reader stops, guesses, backtracks, or loses the argument.
 3. Create append-only `50-edited/reader-revision-ledger.jsonl` records using exactly one operation:
    - `add`: supply evidence-based context, explanation, example, transition, route, or caution.
@@ -27,12 +29,12 @@ Read the book from cover to glossary as the declared reader, not as the pipeline
 4. Route OCR, missing-source, translation, attribution, or meaning uncertainty back to the responsible Skill and create an uncertainty candidate. Do not solve an evidence problem through fluent editing.
 5. Apply accepted revisions to the reading layer, update `reader-aids.json` when the introduction or glossary changes, and preserve contributing `block_id` values.
 6. Preserve the reviewed information-rich input as an immutable process snapshot. Make the final-reader cut without deleting source-bearing content: remove or move guide fields, internal reports, repeated scaffolding and AI prose that solves no demonstrated reader obstacle. Audit introductions, transitions, term explanations, examples, captions and figure notes for plain language, source basis and reading burden.
-7. Perform at least three complete reader passes of the exact final manuscript and continue while new blocking issues appear. The final two complete passes must find no new or open blocker. Store each pass under `50-edited/review-history/full-passes/`, bind it to the current manuscript and an actual transcript, and use a distinct real execution record. Use meaningful contiguous reading units with complete coverage, preserve actual task/answer records, recheck core terms and close issues across cycles. Write schema 1.2 `50-edited/reader-acceptance-report.json` only from actual review, including workflow-1.8 `final_reader_cut` evidence. Different names/generated run IDs are not separate execution. Scripts may prepare pending inventories, never comprehension answers or passing judgments.
+7. Complete the locked protocol: focused-v1 defaults to one complete stable full read of the exact final manuscript; unmarked legacy work retains three complete passes and two stable final passes. Bind real current full-pass evidence to manuscript, policy lock, actual producer/reviewer executions and transcript, with full_read mode and complete line coverage. Preserve actual unit/task answers and core-term checks; scripts cannot create answers or verdicts. Produce reader-acceptance 1.2 and final_reader_cut from actual final evidence.
 8. Run `scripts/validate_reader_revision.py <workspace>`. Publication remains blocked until it passes.
 
 Read [references/reader-revision-contract.md](references/reader-revision-contract.md) before creating review or revision records.
 
-Do not mechanically add a preface, summary or example to every section. First establish the actual reader obstacle. A section may need no edit; a zero-edit cycle may pass with full evidenced review. Three complete passes are a floor, not acceptance by themselves. Stop repeating cycles when the same blockers survive two consecutive cycles with no new evidence: preserve the draft, report the unresolved reason, and request only the missing evidence or decision. Budget exhaustion also stops work; a stop is not acceptance.
+Do not mechanically add a preface, summary, example or correction to every section. A zero-edit cycle may pass with complete real evidence, and an unchanged valid full read is reusable. Extra full reads need changed final bytes, a concrete defect or stricter locked policy. Stop after two no-progress cycles on the same blocker or an authorized budget limit; preserve the draft and exact missing evidence.
 
 ## Boundaries
 
@@ -47,4 +49,4 @@ Do not mechanically add a preface, summary or example to every section. First es
 
 Pass when all required reading dimensions have evidence-based regression verdicts, every applied change replays exactly between frozen snapshots, no unresolved reader issue remains from any cycle, the acceptance hash and section evidence match the final manuscript, and medium/high semantic-risk changes have active evidence-backed confirmation in the unified uncertainty lifecycle. Deterministic validation cannot certify that a reader truly understands; report that limit and retain the actual comprehension review.
 
-For workflow 1.10, use [reading-unit checks](../chaoyun-ancient-book-renovator/references/reader-units.md). In each actual whole-book pass, test chapter meaning, commentary ownership, continued sentences, first-use concepts and unnecessary AI prose. Retain actual answers and failures; do not generate pass records from a loop over headings. Structural failure returns to reconstruction, systematic meaning failure to modernization. Existing three-pass/two-stable requirements remain in force.
+For workflow 1.10, use [reading-unit checks](../chaoyun-ancient-book-renovator/references/reader-units.md). Full acceptance tests chapter meaning, commentary ownership, continued sentences, first-use concepts and unnecessary AI prose. Preserve answers and failures; source/structure failures return upstream. Follow the explicit protocol rather than assuming all books use the legacy three/two schedule.

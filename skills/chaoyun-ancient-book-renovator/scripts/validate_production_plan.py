@@ -134,7 +134,9 @@ def validate(root):
             errors.append('ordinary-reader production requires workflow 1.7, 1.8 or 1.9; preserve legacy evidence and perform fresh design/sample review')
         plan = obj(local(root, '50-edited/production-plan.json'))
         schema = plan.get('schema_version')
-        if schema not in {'1.0', '1.1'}:
+        if book.get('review_protocol') == 'focused-v1' and schema != '1.1':
+            errors.append('focused-v1 requires production-plan schema 1.1 with illustration planning and sample review; legacy 1.0 is not a substitute')
+        elif schema not in {'1.0', '1.1'}:
             errors.append('production-plan schema must be 1.0 (legacy) or 1.1')
         bindings = plan.get('bindings')
         if not isinstance(bindings, dict) or not REQUIRED_BINDINGS.issubset(bindings):

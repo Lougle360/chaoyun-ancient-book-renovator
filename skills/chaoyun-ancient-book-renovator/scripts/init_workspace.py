@@ -106,6 +106,7 @@ def main() -> int:
             "schema_version": "1.0",
             "workflow_schema_version": "1.10",
             "delivery_mode": args.delivery_mode,
+            **({"review_protocol": "focused-v1"} if args.delivery_mode == "ordinary_reader" else {}),
             "book_id": book_id,
             "title": source.stem,
             "edition_label": args.edition_label,
@@ -135,10 +136,11 @@ def main() -> int:
             output / "50-edited/review-policy.json",
             {
                 "schema_version": "1.0",
-                "minimum_full_passes": 3,
-                "required_stable_passes": 2,
+                "protocol": "focused-v1",
+                "minimum_full_passes": 1,
+                "required_stable_passes": 1,
                 "required_methods": ["manuscript_reader", "source_fidelity", "final_pdf_reader"],
-                "rule": "Continue until all blocking issues close and the final two complete passes find no new blockers.",
+                "rule": "Require an independent full read of the exact final manuscript with no new or open blockers; any manuscript byte change requires a fresh complete read.",
             },
         )
     (output / "90-audit/events.jsonl").touch()

@@ -54,11 +54,13 @@ The audit retains distinct `producer` and `reviewer` identities and binds source
 
 ## Freeze, render, review, publish
 
+Use [execution-control.md](execution-control.md): focused-v1 uses one complete stable independent final read instead of fixed three/two; unmarked legacy books keep their locked requirements. Preflight and trial rendering precede freeze; no extra mandatory diagnostic full read. Retain distinct integrity, fidelity, comprehension and PDF conclusions. Compatible checks may share an assignment without feeding the reader expected answers.
+
 Assemble **all textual content**—cover/credits wording, introduction, original preface, body, reader notes, glossary and appendices—before full-reader acceptance. Freeze approved text before rendering. Cover artwork may be designed separately but its words and attribution must agree with the accepted manuscript.
 
 For ordinary-reader delivery, preserve the reviewed information-rich manuscript in `50-edited/review-history/<cycle_id>/` before removing process/guide material from the release path. The final cut may delete only from the reading path: source-bearing text remains in the final manuscript, while displaced editorial material remains recoverable in the process snapshot or another named preservation artifact. The final cut invalidates earlier reader acceptance until the exact compact manuscript receives complete section review, reading-session evidence and the six finalization checks defined in [reader-production.md](reader-production.md).
 
-Keep the candidate PDF under `60-publication/candidates/`. Prepare page proofs and run both gates against that candidate. Only the guarded installer may replace the official PDF after all gates pass. It backs up any previous official PDF by hash and uses atomic replacement. Do not give a candidate the official path just to enable its audit. Use an isolated edition workspace for a rebuild so that the previous delivered PDF/Markdown/assets package remains intact.
+Keep the candidate under 60-publication/candidates/. Prepare and actually inspect its proofs. The guarded installer executes both formal gates, backs up the old file by hash and atomically installs the official PDF. Avoid an identical complete manual gate chain immediately before installation unless diagnosing failure. Use an isolated edition workspace for a rebuild to preserve the prior delivered package.
 
 ## Rework impact
 
@@ -70,7 +72,9 @@ Keep the candidate PDF under `60-publication/candidates/`. Prepare page proofs a
 | Only typography/pagination | Keep unchanged content review; regenerate PDF binding, full-page proof and navigation mapping |
 | Source file, manuscript, asset or contract changed after approval | Treat dependent evidence as stale; preserve history and review the impacted scope before release |
 
-The complete final manuscript still gets a regression read; do not imply unchanged sections were retranslated. Hash mismatch is a deterministic stop, not a semantic diagnosis. `run-state.json: passed` alone cannot override it.
+The exact final manuscript still receives complete acceptance required by its locked protocol. Targeted pre-freeze regression avoids repeated diagnosis; it does not stand for final full coverage. Hash mismatch is a deterministic stop, not a semantic diagnosis, and run-state cannot override it.
+
+Any manuscript-byte change still invalidates exact-hash acceptance; focused-v1 needs one real complete acceptance of the corrected final text, not three automatic rereads. Complete anchors/credits before freeze; keep execution metadata outside the manuscript. Audit-only changes do not trigger full rereading when content acceptance stays valid; check actual dependencies. Renderer-only fixes preserve byte-identical manuscript acceptance but need full proof of the actual new PDF. Archive superseded passes and local regressions separately.
 
 ## Real-book acceptance benchmark
 

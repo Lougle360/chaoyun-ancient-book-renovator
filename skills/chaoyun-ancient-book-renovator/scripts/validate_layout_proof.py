@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
-"""Validate recorded original-layout proof evidence; never grant visual approval."""
+"""Validate recorded proof/applicability evidence, not diagnosis or visual approval.
+
+Actual source diagnosis decides whether G3.5 is required. This validator cannot
+infer PDF complexity or certify a recorded reason for omitting the proof.
+"""
 from __future__ import annotations
 
 import argparse
@@ -59,6 +63,22 @@ def validate(root: Path, *, require_acceptance=True) -> list[str]:
     try:
         book = obj(root / "book.json")
         config = book.get("layout_proof_review")
+        if book.get("review_protocol") == "focused-v1":
+            applicability = book.get("layout_proof_applicability")
+            need(isinstance(applicability, dict),
+                 "focused-v1 requires explicit layout_proof_applicability from actual source diagnosis")
+            need(type(applicability.get("required")) is bool,
+                 "layout_proof_applicability.required must be a boolean")
+            need(isinstance(applicability.get("reason"), str) and applicability["reason"].strip(),
+                 "layout_proof_applicability requires a nonempty source-diagnosis reason")
+            if applicability["required"]:
+                need(config is not None,
+                     "layout_proof_applicability.required=true requires layout_proof_review; do not omit the applicable G3.5 review")
+            else:
+                need(config is None,
+                     "layout_proof_applicability.required=false conflicts with registered layout_proof_review; preserve required proof registration")
+                # Only the declaration is checked; no PDF complexity is inferred.
+                return []
         if config is None:
             return []  # Existing unrelated workspaces are not silently migrated.
         need(isinstance(config, dict) and config.get("required") is True,
@@ -174,7 +194,9 @@ def main():
     args = parser.parse_args()
     root = args.workspace.expanduser().resolve()
     errors = validate(root, require_acceptance=not args.allow_pending)
-    print(json.dumps({"valid": not errors, "mode": "candidate_integrity" if args.allow_pending else "review_gate", "errors": errors}, ensure_ascii=False, indent=2))
+    print(json.dumps({"valid": not errors, "mode": "candidate_integrity" if args.allow_pending else "review_gate",
+                      "scope": "record integrity only; applicability requires actual source diagnosis, not inferred PDF complexity",
+                      "errors": errors}, ensure_ascii=False, indent=2))
     return 1 if errors else 0
 
 

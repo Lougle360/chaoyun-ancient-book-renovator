@@ -2,6 +2,8 @@
 
 Workflow 1.10 additionally requires [reading-unit evidence](reader-units.md) before bulk modernization, exact rendering locations after editing, and both bindings at publication. All 1.9 gates below continue to apply.
 
+Schedule using [execution-control.md](execution-control.md). New focused-v1 replaces fixed repeated full reads with one actual complete independent final acceptance plus independent fidelity and final-PDF inspection. Legacy unmarked work retains its prior schedule. Freeze scope and review-policy/code bindings before semantic review; collect mechanical failures before expensive work. Full coverage, truthful provenance and substantive quality remain required.
+
 ## G0 Intake integrity
 
 - Source opens and its SHA-256, byte size, page count, and filename are recorded.
@@ -50,7 +52,7 @@ Workflow 1.10 additionally requires [reading-unit evidence](reader-units.md) bef
 
 For original-layout reconstruction and Chinese scans with complex diagrams/columns, apply [layout-proof-review.md](layout-proof-review.md). This is a distinct intermediate edition after G3, with source comparison, unchanged source evidence, eligible simplified text/labels plus documented protected originals, contextual correction records, complete figure inventory, original placement and uniform font sizes within each semantic region. Review every PDF page against its source; “beautiful”, selectable text and matching bounding boxes do not prove fidelity.
 
-Register the versioned record in `book.json.layout_proof_review`. `validate_layout_proof.py WORKSPACE` must pass before scaling and is rechecked at modernization, editing and both publication gates. Pending or returned proof, missing review evidence and stale PDF/input/render hashes block acceptance. Changes require a new version and fresh review, not refreshed hashes on an old verdict. See the contract for sample versus complete scope. Legacy unrelated workspaces without this extension are not automatically migrated or approved.
+For focused-v1, diagnose and lock book.layout_proof_applicability (required boolean and source-grounded reason). When required, register book.layout_proof_review; missing applicability or contradictory registration blocks. validate_layout_proof.py must pass before scaling and at modernization/editing/publication. Existing unrelated unmarked workspaces are not auto-migrated. Changed proof/input/render/code hashes need fresh affected review, not copied verdicts.
 
 New proof acceptance requires schema 1.1 and [text/semantics review](text-semantics-review.md): all source regions, visible glyphs, source-versus-reading separation, contextual terms, complete reading order, meaning and final artifact are independently inspected. The unified ledger must validate; an open reading cannot be reported as verified, internal audit-only disclosure is insufficient, and high-impact meaning uncertainty blocks acceptance. Font size or selectable text checks do not substitute for this content review.
 
@@ -84,11 +86,11 @@ New full-book production also requires the [whole-book illustration plan](whole-
 
 Workflow 1.8 requires reader review/acceptance 1.2: meaningful contiguous units, actual task/answer/assessment files and provenance, with task links from each unit and core glossary sample. It additionally binds an immutable process-edition snapshot and the six final-reader-cut checks. Repeated generic answers are not section-specific evidence. Old acceptance cannot be upgraded by altering a schema field. Full coverage is preserved without requiring a fake comprehension report for each small heading. The 1.1 mechanics below remain applicable except for the upgraded acceptance version and reading-unit boundaries.
 
-- `$chaoyun-reader-experience-reviser` reads the complete manuscript before editing, records reader obstacles across all nine dimensions, and applies traceable `add`, `delete_from_reading_path`, `rewrite`, or `reorganize` operations.
+- $chaoyun-reader-experience-reviser performs actual complete reader acceptance and records all nine dimensions. focused-v1 does not additionally require a prior whole-book diagnostic read: clean the manuscript before independent full acceptance, or preserve a failed read and fix it. Revisions remain traceable add, delete_from_reading_path, rewrite or reorganize operations.
 - Deletion from the reading path preserves source material and provenance. Medium/high semantic-risk revisions enter the unified uncertainty lifecycle.
 - A fresh regression reviewer differs from the revision producer. The acceptance hash matches the final manuscript, no proposed or returned revision remains unresolved, and glossary sampling passes.
 - Reader schema 1.1 requires real input/output snapshots and replayable edits, evidenced closure across every cycle, complete section-level comprehension records, all core terms rechecked, and separate production/review execution records. See the reader-revision contract; strings naming different reviewers alone do not prove independent review.
-- Workflow 1.9 requires at least three complete passes of the exact manuscript and two stable final passes with no new or open blocker. Each pass binds a real transcript and distinct execution record. Large cuts require issue-level revision rows, not one catch-all rewrite.
+- Reader-pass scheduling is protocol-bound: focused-v1 defaults to one complete stable final read; unmarked legacy work retains three complete passes and two stable final passes. Every accepted pass needs real independent execution and transcript. Focused publication checks full_read, complete line coverage, producer/reviewer separation and policy binding. Large cuts still require issue-level revision evidence.
 
 ## G6 Publication
 

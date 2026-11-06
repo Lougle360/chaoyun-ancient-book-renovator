@@ -8,6 +8,8 @@
 
 在 `book.json` 登记 `layout_proof_review`，含 `required: true` 与当前版本 `record` 路径。不得通过删除此配置绕过已要求的审核。此为 workflow 1.10 的专项审核扩展，不自动修改既有阶段的通过状态。
 
+新 focused-v1 任务必须先诊断并填写 book.layout_proof_applicability：required（布尔）及 reason（源页依据），随验收政策锁定。required=true 必须有实际 layout_proof_review；required=false 不制造无用校样，但不能与已登记的必需校样矛盾。程序检查登记及证据，不会自动判断 PDF 是否复杂。代表页按真实风险选取，不默认额外制作整本原版式出版物。
+
 ## 交付与实际审查
 
 - 将带版本号的 PDF 放在 `60-publication/supplements/`。比较页左侧为原扫描、右侧为校订稿，保持可比比例与清晰页码；可附独立校订页。不要把不同裁切或缩放造成的视觉差别误报为排版差别。
